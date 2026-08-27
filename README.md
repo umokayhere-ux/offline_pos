@@ -331,6 +331,12 @@ Produces an NSIS installer in `dist/` with an application icon, a desktop shortc
 option and a Start-menu entry. **The end user does not need Node.js installed** —
 Electron ships its own runtime.
 
+**Run this on Windows.** The packaging step itself is cross-platform — building
+from Linux does produce `dist/win-unpacked/iTtEk POS.exe` with the native database
+module correctly unpacked from the asar — but stamping the icon and version
+resources into the `.exe` uses `rcedit`, which needs Wine on a non-Windows host.
+Build on the shop's own platform and there is nothing extra to install.
+
 ---
 
 ## Project layout
