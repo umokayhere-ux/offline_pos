@@ -17,15 +17,31 @@ const { execSync } = require('child_process');
 
 const target = process.argv[2] === 'electron' ? 'electron' : 'node';
 
+/**
+ * A build can be unusable in two different ways: compiled for another Node ABI
+ * (running the app after testing, or vice versa) or compiled for another
+ * platform entirely (after `npm run build:win` cross-packages the module).
+ * Both simply mean "rebuild".
+ */
+const NEEDS_REBUILD = [
+  /NODE_MODULE_VERSION/,          // built for a different Node/Electron ABI
+  /invalid ELF header/i,          // a Windows or macOS binary on Linux
+  /wrong ELF class/i,             // 32/64-bit mismatch
+  /not a valid Win32 application/i,
+  /mach-o|incompatible architecture/i,
+  /was compiled against a different/i,
+  /Cannot find module.*better_sqlite3\.node/i
+];
+
 function loadsUnderNode() {
   try {
     // The native binding is loaded lazily on first use, so opening a database is
-    // the only reliable way to find out which ABI the build targets.
+    // the only reliable way to find out what the current build targets.
     const Database = require('better-sqlite3');
     new Database(':memory:').close();
     return true;
   } catch (error) {
-    if (/NODE_MODULE_VERSION/.test(error.message)) return false;
+    if (NEEDS_REBUILD.some((pattern) => pattern.test(error.message))) return false;
     throw error;
   }
 }
@@ -41,7 +57,7 @@ try {
   } else if (loadsUnderNode()) {
     // Already built for this Node — nothing to do.
   } else {
-    console.log('better-sqlite3 was built for Electron; rebuilding it for Node so the tests can run…');
+    console.log('The database module was built for another runtime or platform; rebuilding it for Node so the tests can run…');
     run('npm rebuild better-sqlite3 --build-from-source');
   }
 } catch (error) {
