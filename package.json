@@ -1,0 +1,63 @@
+{
+  "name": "ittek-pos",
+  "productName": "iTtEk POS",
+  "version": "1.0.0",
+  "description": "Offline Shop Management & Point of Sale for Ghanaian retail (GHS)",
+  "main": "src/main/main.js",
+  "author": "iTtEk",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "test": "node --test \"tests/**/*.test.js\"",
+    "test:financial": "node --test \"tests/financial/**/*.test.js\"",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "postinstall": "electron-builder install-app-deps",
+    "build:win": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.ittek.pos",
+    "productName": "iTtEk POS",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "iTtEk POS"
+    }
+  }
+}
