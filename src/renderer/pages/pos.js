@@ -1,5 +1,5 @@
 import { el, mount, clear, debounce, field } from '../utils/dom.js';
-import { money, moneyInput, parseMoney, qty, parseQty, paymentLabel, dateTime } from '../utils/format.js';
+import { money, moneyInput, parseMoney, qty, qtyExact, parseQty, paymentLabel, dateTime } from '../utils/format.js';
 import { api, tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal, confirmModal, hasOpenModal } from '../components/modal.js';
@@ -43,7 +43,7 @@ async function render(ctx) {
     const result = await tryCall('pos', 'priceCart', {
       items: state.items.map((item) => ({
         productId: item.productId,
-        quantity: qty(item.quantityMilli),
+        quantity: qtyExact(item.quantityMilli),
         unitPrice: moneyInput(item.unitPricePesewas),
         discount: item.discount
       })),
@@ -477,7 +477,7 @@ async function render(ctx) {
       cart: {
         items: state.items.map((item) => ({
           productId: item.productId,
-          quantity: qty(item.quantityMilli),
+          quantity: qtyExact(item.quantityMilli),
           unitPrice: moneyInput(item.unitPricePesewas),
           discount: item.discount
         })),
@@ -607,7 +607,7 @@ async function render(ctx) {
     const payload = {
       items: state.items.map((item) => ({
         productId: item.productId,
-        quantity: qty(item.quantityMilli),
+        quantity: qtyExact(item.quantityMilli),
         unitPrice: moneyInput(item.unitPricePesewas),
         discount: item.discount
       })),
@@ -717,10 +717,10 @@ async function render(ctx) {
       const lineTotals = state.totals && state.totals.lines[index] ? state.totals.lines[index] : null;
       const qtyInput = el('input.qty', {
         type: 'text',
-        value: qty(item.quantityMilli),
+        value: qtyExact(item.quantityMilli),
         onchange: (event) => {
           const parsed = parseQty(event.target.value);
-          if (parsed === null) { toast.error('Enter a valid quantity.'); event.target.value = qty(item.quantityMilli); return; }
+          if (parsed === null) { toast.error('Enter a valid quantity.'); event.target.value = qtyExact(item.quantityMilli); return; }
           setQuantity(index, parsed);
         }
       });

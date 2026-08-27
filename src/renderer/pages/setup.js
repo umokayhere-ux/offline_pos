@@ -175,7 +175,7 @@ export function renderSetup({ onComplete, status }) {
         field('Quantity decimal places', el('select', {
           onchange: (event) => { state.inventory.quantityPrecision = Number(event.target.value); }
         }, [
-          el('option', { value: '0', selected: state.inventory.quantityPrecision === 0 }, '0 — whole items only (1, 2, 3)'),
+          el('option', { value: '0', selected: state.inventory.quantityPrecision === 0 }, '0 — plain numbers (1, 2, 3)'),
           el('option', { value: '2', selected: state.inventory.quantityPrecision === 2 }, '2 — e.g. 0.50 kg'),
           el('option', { value: '3', selected: state.inventory.quantityPrecision === 3 }, '3 — e.g. 0.500 kg')
         ]), { help: 'Use decimals if you sell by weight, volume or length.' }),

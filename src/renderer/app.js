@@ -1,5 +1,5 @@
 import { el, mount, clear } from './utils/dom.js';
-import { initials } from './utils/format.js';
+import { initials, setQuantityPrecision } from './utils/format.js';
 import { call, tryCall, onEvent } from './services/api.js';
 import { toast } from './components/toast.js';
 import { closeTopModal, confirmModal } from './components/modal.js';
@@ -90,7 +90,11 @@ async function reloadSettings() {
     tryCall('settings', 'all', undefined, { silent: true }),
     tryCall('settings', 'shopProfile', undefined, { silent: true })
   ]);
-  if (settingsResult.ok) app.settings = settingsResult.data;
+  if (settingsResult.ok) {
+    app.settings = settingsResult.data;
+    // The shop's quantity precision drives how every screen displays quantities.
+    setQuantityPrecision(app.settings['inventory.quantity_precision']);
+  }
   if (shopResult.ok) app.shop = shopResult.data;
   return app.settings;
 }

@@ -29,8 +29,12 @@ export function parseMoney(text) {
   return Number(major) * 100 + Number(minor.padEnd(2, '0'));
 }
 
-/** 2500 -> "2.5"; trailing zeros trimmed. */
-export function qty(milli) {
+/**
+ * Exact, lossless quantity text: 2500 -> "2.5", 500 -> "0.5".
+ * ALWAYS use this when building a payload for the main process — it never
+ * rounds, so a 0.5 kg line cannot become 1 kg on its way to the database.
+ */
+export function qtyExact(milli) {
   const value = Number(milli);
   if (!Number.isFinite(value)) return '0';
   const negative = value < 0;
@@ -40,8 +44,39 @@ export function qty(milli) {
   return `${negative ? '-' : ''}${whole}${frac ? `.${frac}` : ''}`;
 }
 
-/** Fixed-precision quantity for inputs, honouring the shop's setting. */
-export function qtyFixed(milli, decimals = 3) {
+// The shop's configured display precision (Settings → Inventory & POS).
+// 3 means "up to three decimals"; 0 means whole units only.
+let quantityPrecision = 3;
+
+export function setQuantityPrecision(decimals) {
+  const n = Number(decimals);
+  quantityPrecision = Number.isFinite(n) ? Math.max(0, Math.min(3, Math.trunc(n))) : 3;
+}
+
+export function getQuantityPrecision() {
+  return quantityPrecision;
+}
+
+/**
+ * Quantity for DISPLAY, padded to the shop's configured precision.
+ *
+ *   precision 3, 0.5  -> "0.500"     a shop weighing goods
+ *   precision 0, 3    -> "3"         a shop selling whole items
+ *   precision 0, 0.5  -> "0.5"       still exact
+ *
+ * The precision sets how many decimals are *shown*; it never rounds a real
+ * fraction away, because 9.5 kg of stock displayed as "10" would be a lie.
+ */
+export function qty(milli) {
+  const exact = qtyExact(milli);
+  if (quantityPrecision === 0) return exact;
+  const [whole, frac = ''] = exact.split('.');
+  if (frac.length >= quantityPrecision) return exact;
+  return `${whole}.${frac.padEnd(quantityPrecision, '0')}`;
+}
+
+/** Fixed-precision quantity, e.g. "0.500" for a weighing scale readout. */
+export function qtyFixed(milli, decimals = quantityPrecision) {
   const value = Number(milli) / 1000;
   return value.toFixed(Math.max(0, Math.min(3, decimals)));
 }

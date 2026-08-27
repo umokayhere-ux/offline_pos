@@ -15,7 +15,7 @@ const activity = require('./activity.service');
 
 const BOOLEAN_KEYS = new Set([
   'app.setup_complete', 'app.demo_mode',
-  'inventory.allow_negative_stock', 'pos.require_customer_for_credit'
+  'inventory.allow_negative_stock'
 ]);
 
 const NUMBER_KEYS = new Set([
@@ -39,7 +39,6 @@ const WRITABLE = {
   'inventory.low_stock_default_milli': { label: 'Default low-stock level', number: true, min: 0 },
   'inventory.allow_negative_stock': { label: 'Allow negative stock', boolean: true },
   'pos.scan_behaviour': { label: 'Scan behaviour', oneOf: ['increment', 'prompt'] },
-  'pos.require_customer_for_credit': { label: 'Require a customer for credit sales', boolean: true },
   'security.session_timeout_minutes': { label: 'Session timeout', number: true, min: 1, max: 480 },
   'security.min_password_length': { label: 'Minimum password length', number: true, min: 4, max: 64 },
   'backup.directory': { label: 'Backup folder', maxLength: 400 },

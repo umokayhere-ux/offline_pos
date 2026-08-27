@@ -1,5 +1,5 @@
 import { el, mount, field, debounce, downloadText } from '../utils/dom.js';
-import { money, moneyInput, parseMoney, qty, parseQty, stockBadge, dateTime } from '../utils/format.js';
+import { money, moneyInput, parseMoney, qty, qtyExact, parseQty, stockBadge, dateTime } from '../utils/format.js';
 import { api, tryCall, constants } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal, confirmModal, promptModal } from '../components/modal.js';
@@ -124,8 +124,8 @@ async function render(ctx) {
       costPrice: product ? moneyInput(product.cost_price_pesewas) : '',
       sellingPrice: product ? moneyInput(product.selling_price_pesewas) : '',
       wholesalePrice: product && product.wholesale_price_pesewas !== null ? moneyInput(product.wholesale_price_pesewas) : '',
-      stock: product ? qty(product.stock_milli) : '0',
-      minStock: product ? qty(product.min_stock_milli) : String((ctx.settings['inventory.low_stock_default_milli'] || 0) / 1000),
+      stock: product ? qtyExact(product.stock_milli) : '0',
+      minStock: product ? qtyExact(product.min_stock_milli) : String((ctx.settings['inventory.low_stock_default_milli'] || 0) / 1000),
       unit: product ? product.unit : 'Piece',
       description: product ? (product.description || '') : '',
       status: product ? product.status : 'active',
@@ -244,7 +244,7 @@ async function render(ctx) {
 
   function adjustStock(product) {
     const modeButtons = { current: 'set' };
-    const valueInput = el('input.qty', { type: 'text', 'data-autofocus': '', value: qty(product.stock_milli) });
+    const valueInput = el('input.qty', { type: 'text', 'data-autofocus': '', value: qtyExact(product.stock_milli) });
     const reasonInput = el('input', { type: 'text', placeholder: 'e.g. Damaged products, stock count correction' });
     const errorNode = el('div.error-text.hidden');
     const preview = el('div.callout.info');
@@ -265,7 +265,7 @@ async function render(ctx) {
           modeButtons.current = 'set';
           modes.querySelectorAll('.btn').forEach((b) => b.classList.remove('active'));
           event.currentTarget.classList.add('active');
-          valueInput.value = qty(product.stock_milli);
+          valueInput.value = qtyExact(product.stock_milli);
           updatePreview();
         }
       }, 'Set new quantity'),

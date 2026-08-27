@@ -1,5 +1,5 @@
 import { el, mount, field, debounce } from '../utils/dom.js';
-import { money, qty, parseQty, dateTime, todayKey } from '../utils/format.js';
+import { money, qty, qtyExact, parseQty, dateTime, todayKey } from '../utils/format.js';
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal } from '../components/modal.js';
@@ -188,12 +188,12 @@ async function render(ctx) {
 
     const rows = refundable.map((line) => {
       const qtyInput = el('input.qty', {
-        type: 'text', value: '', placeholder: qty(line.remainingQtyMilli), disabled: true,
+        type: 'text', value: '', placeholder: qtyExact(line.remainingQtyMilli), disabled: true,
         oninput: (event) => {
           const parsed = parseQty(event.target.value);
           if (parsed === null || parsed <= 0) { selections.delete(line.saleItemId); updateTotal(); return; }
           if (parsed > line.remainingQtyMilli) {
-            event.target.value = qty(line.remainingQtyMilli);
+            event.target.value = qtyExact(line.remainingQtyMilli);
             selections.set(line.saleItemId, line.remainingQtyMilli);
           } else {
             selections.set(line.saleItemId, parsed);
@@ -207,7 +207,7 @@ async function render(ctx) {
         onchange: (event) => {
           qtyInput.disabled = !event.target.checked;
           if (event.target.checked) {
-            qtyInput.value = qty(line.remainingQtyMilli);
+            qtyInput.value = qtyExact(line.remainingQtyMilli);
             selections.set(line.saleItemId, line.remainingQtyMilli);
           } else {
             qtyInput.value = '';
@@ -248,7 +248,7 @@ async function render(ctx) {
       const response = await tryCall('refunds', 'create', {
         saleId,
         items: [...selections.entries()].map(([saleItemId, quantityMilli]) => ({
-          saleItemId, quantity: qty(quantityMilli)
+          saleItemId, quantity: qtyExact(quantityMilli)
         })),
         reason, method, restock
       }, { silent: true });

@@ -255,7 +255,6 @@ async function render(ctx) {
       'inventory.low_stock_default_milli': String((state.settings['inventory.low_stock_default_milli'] || 0) / 1000),
       'inventory.allow_negative_stock': !!state.settings['inventory.allow_negative_stock'],
       'pos.scan_behaviour': state.settings['pos.scan_behaviour'] || 'increment',
-      'pos.require_customer_for_credit': state.settings['pos.require_customer_for_credit'] !== false
     };
 
     return el('div.card', [
@@ -265,10 +264,10 @@ async function render(ctx) {
           field('Quantity decimal places', el('select', {
             onchange: (event) => { values['inventory.quantity_precision'] = event.target.value; }
           }, [
-            el('option', { value: '0', selected: values['inventory.quantity_precision'] === '0' }, '0 — whole items only'),
+            el('option', { value: '0', selected: values['inventory.quantity_precision'] === '0' }, '0 — plain numbers (3, 0.5)'),
             el('option', { value: '2', selected: values['inventory.quantity_precision'] === '2' }, '2 — e.g. 0.50 kg'),
             el('option', { value: '3', selected: values['inventory.quantity_precision'] === '3' }, '3 — e.g. 0.500 kg')
-          ]), { help: 'How quantities are displayed. Use decimals if you sell by weight, volume or length.' }),
+          ]), { help: 'How many decimals quantities are shown to. A real fraction is never rounded away, so 9.5 kg of stock always reads as 9.5.' }),
 
           field('Default reorder level for new products', el('input', {
             type: 'number', min: '0', step: '1', value: values['inventory.low_stock_default_milli'],
@@ -291,14 +290,7 @@ async function render(ctx) {
               'Allow selling products that are out of stock'
             ]),
             el('div.help', 'Leave this off unless you knowingly sell ahead of delivery. It is the main protection against stock figures drifting.'),
-            el('label.checkbox.mt-8', [
-              el('input', {
-                type: 'checkbox', checked: values['pos.require_customer_for_credit'],
-                onchange: (event) => { values['pos.require_customer_for_credit'] = event.target.checked; }
-              }),
-              'Require a named customer for credit sales'
-            ]),
-            el('div.help', 'A debt with nobody attached to it can never be collected.')
+            el('div.callout.info.mt-16', 'A credit sale always requires a named customer — a debt with nobody attached to it could never be collected or chased, so this rule is enforced and cannot be switched off.')
           ]))
         ]),
         el('div.row.mt-16', [
@@ -311,8 +303,7 @@ async function render(ctx) {
                 'inventory.quantity_precision': values['inventory.quantity_precision'],
                 'inventory.low_stock_default_milli': String(Math.round(Number(values['inventory.low_stock_default_milli'] || 0) * 1000)),
                 'inventory.allow_negative_stock': values['inventory.allow_negative_stock'],
-                'pos.scan_behaviour': values['pos.scan_behaviour'],
-                'pos.require_customer_for_credit': values['pos.require_customer_for_credit']
+                'pos.scan_behaviour': values['pos.scan_behaviour']
               }, 'Inventory settings saved.');
               event.currentTarget.disabled = false;
               await reload();

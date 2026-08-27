@@ -22,7 +22,6 @@ const DEFAULT_SETTINGS = {
   'inventory.low_stock_default_milli': '5000',
   'inventory.allow_negative_stock': 'false',
   'pos.scan_behaviour': 'increment',      // increment | prompt
-  'pos.require_customer_for_credit': 'true',
   'security.session_timeout_minutes': '30',
   'security.min_password_length': '6',
   'backup.directory': '',
