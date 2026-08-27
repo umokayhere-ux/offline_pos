@@ -331,11 +331,32 @@ Produces an NSIS installer in `dist/` with an application icon, a desktop shortc
 option and a Start-menu entry. **The end user does not need Node.js installed** —
 Electron ships its own runtime.
 
-**Run this on Windows.** The packaging step itself is cross-platform — building
-from Linux does produce `dist/win-unpacked/iTtEk POS.exe` with the native database
-module correctly unpacked from the asar — but stamping the icon and version
-resources into the `.exe` uses `rcedit`, which needs Wine on a non-Windows host.
-Build on the shop's own platform and there is nothing extra to install.
+**Run this on Windows.** The packaging step itself is cross-platform, but
+stamping the icon and version resources into the `.exe` uses `rcedit`, which needs
+Wine on a non-Windows host. Build on the shop's own platform and there is nothing
+extra to install.
+
+### Portable build (no installer needed)
+
+If you want to try the application on a Windows PC before setting up a build
+machine — or run it from a USB stick — build the portable version instead. This
+one **works from any operating system**, because it skips the icon-stamping step:
+
+```bash
+npm run build:win:portable   # dist/iTtEk POS-1.0.0-win.zip  (~110 MB)
+npm run build:win:folder     # dist/win-unpacked/            (a plain folder)
+```
+
+Copy the folder to the Windows PC and double-click `iTtEk POS.exe`. There is
+nothing to install and Node.js is not required — it is the same application, with
+the same database engine, that the installer would deploy.
+
+The trade-offs versus `npm run build:win`: it uses Electron's default icon rather
+than the shop icon, carries no version metadata in the `.exe`, is unsigned (so
+SmartScreen will warn on first run — choose *More info → Run anyway*), and creates
+no Start-menu or desktop shortcut. Its data lives in the same place as an
+installed copy (`%APPDATA%\iTtEk POS`), so you can trial it portably and install
+properly later without losing anything.
 
 ---
 
