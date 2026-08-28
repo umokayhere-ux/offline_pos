@@ -13,6 +13,8 @@
  *   node scripts/ensure-abi.js electron rebuild for Electron (running the app)
  */
 
+const fs = require('fs');
+const path = require('path');
 const { execSync } = require('child_process');
 
 const target = process.argv[2] === 'electron' ? 'electron' : 'node';
@@ -50,10 +52,28 @@ function run(command) {
   execSync(command, { stdio: 'inherit' });
 }
 
+/** Fail loudly when dependencies are missing, rather than half-working. */
+function assertInstalled() {
+  const missing = ['electron', '@electron/rebuild']
+    .filter((name) => !fs.existsSync(path.join(__dirname, '..', 'node_modules', name)));
+  if (missing.length === 0) return;
+
+  console.error(
+    `\nDependencies are not fully installed (missing: ${missing.join(', ')}).\n`
+    + 'This usually means `npm install` did not finish — a dropped connection is the\n'
+    + 'most common cause, since Electron alone is around 100MB.\n\n'
+    + 'Run `npm install` again; it resumes from what has already been downloaded.\n'
+  );
+  process.exit(1);
+}
+
 try {
   if (target === 'electron') {
+    assertInstalled();
     console.log('Rebuilding better-sqlite3 for Electron…');
-    run('npx electron-rebuild -f -w better-sqlite3');
+    // --no-install: use the electron-rebuild from node_modules and never silently
+    // fetch a different package of that name from the registry.
+    run('npx --no-install electron-rebuild -f -w better-sqlite3');
   } else if (loadsUnderNode()) {
     // Already built for this Node — nothing to do.
   } else {
