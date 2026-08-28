@@ -16,9 +16,9 @@
     "rebuild:electron": "node scripts/ensure-abi.js electron",
     "rebuild:node": "npm rebuild better-sqlite3 --build-from-source",
     "postinstall": "electron-builder install-app-deps",
-    "build:win": "node scripts/ensure-abi.js electron && electron-builder --win --x64",
-    "build:win:portable": "electron-builder --win zip -c.win.signAndEditExecutable=false",
-    "build:win:folder": "electron-builder --win --dir -c.win.signAndEditExecutable=false"
+    "build:win": "node scripts/ensure-abi.js electron && electron-builder --win --x64 --publish never",
+    "build:win:portable": "electron-builder --win zip -c.win.signAndEditExecutable=false --publish never",
+    "build:win:folder": "electron-builder --win --dir -c.win.signAndEditExecutable=false --publish never"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
