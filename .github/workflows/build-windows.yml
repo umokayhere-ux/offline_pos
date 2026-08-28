@@ -1,0 +1,76 @@
+name: Build Windows installer
+
+# Builds the Windows .exe installer on a real Windows machine, so you do not need
+# one of your own. Run it from the Actions tab (Run workflow), or push a version
+# tag like v1.0.0 to build and publish a release automatically.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # needed only to attach the installer to a release
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the test suite
+        run: npm test
+
+  build:
+    name: Windows installer
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # postinstall runs electron-builder install-app-deps, which compiles
+      # better-sqlite3 against Electron's ABI for Windows.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the installer
+        run: npm run build:win
+
+      - name: Show what was produced
+        shell: bash
+        run: ls -lh dist/*.exe
+
+      # Downloadable from the workflow run page for 90 days.
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ittek-pos-windows-installer
+          path: |
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
+          if-no-files-found: error
+          retention-days: 90
+
+      # On a version tag, publish the installer as a GitHub release as well.
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true

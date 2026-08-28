@@ -336,6 +336,18 @@ stamping the icon and version resources into the `.exe` uses `rcedit`, which nee
 Wine on a non-Windows host. Build on the shop's own platform and there is nothing
 extra to install.
 
+### Building the installer without a Windows machine
+
+`.github/workflows/build-windows.yml` builds the installer on a GitHub-hosted
+Windows runner, so you do not need a Windows PC to produce one:
+
+- **On demand** — GitHub → **Actions** → *Build Windows installer* → **Run workflow**.
+  When it finishes, the `.exe` is under **Artifacts** on the run page.
+- **On a version tag** — `git tag v1.0.0 && git push origin v1.0.0` builds the
+  installer and publishes it as a GitHub release.
+
+The workflow runs the test suite first and refuses to build if anything fails.
+
 ### Portable build (no installer needed)
 
 If you want to try the application on a Windows PC before setting up a build
