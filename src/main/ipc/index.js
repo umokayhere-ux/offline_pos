@@ -28,6 +28,7 @@ const barcode = require('../services/barcode.service');
 const io = require('../services/importexport.service');
 const backup = require('../backup/backup.service');
 const printing = require('../printers/print.service');
+const { fileToDataUrl } = require('../utils/file');
 
 /**
  * IPC handlers.
@@ -334,18 +335,6 @@ const handlers = {
     return { confirmed: answer.response === 0 };
   }]
 };
-
-/** Read a local image into a data: URL so the renderer never touches the disk. */
-function fileToDataUrl(filePath) {
-  try {
-    if (!filePath || !fs.existsSync(filePath)) return '';
-    const ext = path.extname(filePath).toLowerCase().replace('.', '') || 'png';
-    const mime = ext === 'jpg' ? 'jpeg' : ext;
-    return `data:image/${mime};base64,${fs.readFileSync(filePath).toString('base64')}`;
-  } catch {
-    return '';
-  }
-}
 
 function registerIpcHandlers() {
   const missing = CHANNELS.filter((channel) => !handlers[channel]);

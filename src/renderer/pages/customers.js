@@ -33,8 +33,8 @@ async function render(ctx) {
           ]) },
           { label: 'Address', render: (row) => el('span.text-sm', row.address || '—') },
           { label: 'Outstanding debt', align: 'right', render: (row) => (row.balance_pesewas > 0
-            ? el('span.badge-pill.red', money(row.balance_pesewas))
-            : el('span.badge-pill.green', 'Clear')) },
+            ? el('span.badge-pill.danger', money(row.balance_pesewas))
+            : el('span.badge-pill.ok', 'Clear')) },
           { label: 'Customer since', align: 'right', render: (row) => el('span.text-sm', date(row.created_at)) },
           { label: '', align: 'right', render: (row) => el('div.actions', [
             el('button.btn.sm', { type: 'button', onclick: () => profile(row) }, 'View'),
@@ -125,8 +125,9 @@ async function render(ctx) {
         el('div.grid.cols-4', [
           el('div.stat', [el('div.label', 'Lifetime purchases'), el('div.value.sm', money(totals.lifetime_pesewas))]),
           el('div.stat', [el('div.label', 'Number of sales'), el('div.value.sm', String(totals.purchase_count))]),
-          el('div.stat', { class: person.balance_pesewas > 0 ? 'red' : 'green' }, [
-            el('div.label', 'Outstanding debt'), el('div.value.sm', money(person.balance_pesewas))
+          el('div.stat', [
+            el('div.label', 'Outstanding debt'),
+            el('div.value.sm', { class: person.balance_pesewas > 0 ? 'negative' : '' }, money(person.balance_pesewas))
           ]),
           el('div.stat', [el('div.label', 'Phone'), el('div.value.sm', person.phone || '—')])
         ]),
@@ -139,7 +140,7 @@ async function render(ctx) {
             { label: 'Served by', render: (row) => el('span.text-sm', row.cashier || '') },
             { label: 'Method', render: (row) => el('span.badge-pill', paymentLabel(row.payment_method)) },
             { label: 'Total', align: 'right', render: (row) => el('strong.money', money(row.total_pesewas)) },
-            { label: 'Still owed', align: 'right', render: (row) => (row.debt_pesewas > 0 ? el('span.badge-pill.red', money(row.debt_pesewas)) : '—') }
+            { label: 'Still owed', align: 'right', render: (row) => (row.debt_pesewas > 0 ? el('span.badge-pill.danger', money(row.debt_pesewas)) : '—') }
           ],
           rows: sales,
           empty: { title: 'No purchases yet', message: '' }
@@ -154,7 +155,7 @@ async function render(ctx) {
             { label: 'Paid', align: 'right', render: (row) => money(row.paid_pesewas) },
             { label: 'Outstanding', align: 'right', render: (row) => el('strong.money', money(row.outstanding_pesewas)) },
             { label: 'Status', render: (row) => el('span.badge-pill', {
-              class: row.status === 'settled' ? 'green' : (row.status === 'written_off' ? 'amber' : 'red')
+              class: row.status === 'settled' ? 'ok' : (row.status === 'written_off' ? 'warn' : 'danger')
             }, row.status.replace('_', ' ')) }
           ],
           rows: debts

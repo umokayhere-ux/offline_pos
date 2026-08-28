@@ -3,6 +3,7 @@ import { dateTime, todayKey } from '../utils/format.js';
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { dataTable, pager } from '../components/table.js';
+import { icon } from '../components/icons.js';
 
 /**
  * Audit trail. The database itself refuses UPDATE and DELETE on these rows, so
@@ -10,10 +11,10 @@ import { dataTable, pager } from '../components/table.js';
  */
 
 const ACTION_TONES = [
-  [/refund|void|written_off|deleted|disable/, 'red'],
-  [/sale\.completed|payment|backup\.created/, 'green'],
-  [/created|added/, 'blue'],
-  [/updated|adjusted|permissions/, 'amber']
+  [/refund|void|written_off|deleted|disable/, 'danger'],
+  [/sale\.completed|payment|backup\.created/, 'ok'],
+  [/created|added/, 'brand'],
+  [/updated|adjusted|permissions/, 'warn']
 ];
 
 function toneFor(action) {
@@ -119,7 +120,7 @@ async function render(ctx) {
         type: 'date', onchange: (event) => { state.to = event.target.value; state.page = 1; load(); }
       })]),
       el('span.grow'),
-      el('button.btn', { type: 'button', onclick: exportCsv }, '⬇ Export this page')
+      el('button.btn', { type: 'button', onclick: exportCsv }, [icon('download', { size: 15 }), 'Export this page'])
     ]),
     tableHost);
 

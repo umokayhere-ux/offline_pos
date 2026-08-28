@@ -44,11 +44,11 @@ async function render(ctx) {
               el('div.text-sm.muted', `@${row.username}`)
             ])
           ]) },
-          { label: 'Role', render: (row) => el('span.badge-pill.blue', row.roleLabel) },
+          { label: 'Role', render: (row) => el('span.badge-pill.brand', row.roleLabel) },
           { label: 'Contact', render: (row) => el('span.text-sm', [row.phone, row.email].filter(Boolean).join(' · ') || '—') },
           { label: 'Last signed in', render: (row) => el('span.text-sm', row.lastLoginAt ? dateTime(row.lastLoginAt) : 'Never') },
           { label: 'Status', render: (row) => (row.status === 'active'
-            ? el('span.badge-pill.green', 'Active') : el('span.badge-pill.red', 'Disabled')) },
+            ? el('span.badge-pill.ok', 'Active') : el('span.badge-pill.danger', 'Disabled')) },
           { label: '', align: 'right', render: (row) => el('div.actions', [
             el('button.btn.sm', { type: 'button', onclick: () => userForm(row) }, 'Edit'),
             el('button.btn.sm', { type: 'button', onclick: () => passwordDialog(row) }, 'Reset password'),

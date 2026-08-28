@@ -47,7 +47,7 @@ async function render(ctx) {
 
   function paint() {
     mount(summaryHost, [
-      el('div.stat.amber', [
+      el('div.stat', [
         el('div.label', 'Total in this view'),
         el('div.value', money((state.data.totals || {}).amount_pesewas || 0)),
         el('div.hint', `${state.data.total} entr${state.data.total === 1 ? 'y' : 'ies'}`)
@@ -66,7 +66,7 @@ async function render(ctx) {
         columns: [
           { label: 'Reference', render: (row) => el('span.mono.text-sm', row.reference_no) },
           { label: 'Date', render: (row) => el('span.text-sm', dateTime(row.spent_at)) },
-          { label: 'Category', render: (row) => el('span.badge-pill.blue', row.category_name) },
+          { label: 'Category', render: (row) => el('span.badge-pill.brand', row.category_name) },
           { label: 'Description', render: (row) => el('div', [
             el('div', row.description),
             row.notes ? el('div.text-sm.muted', row.notes) : null,

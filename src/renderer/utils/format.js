@@ -163,7 +163,7 @@ export function paymentLabel(method) {
 }
 
 export function stockBadge(product) {
-  if (product.stock_milli <= 0) return { label: 'Out of stock', tone: 'red' };
-  if (product.stock_milli <= product.min_stock_milli) return { label: 'Low stock', tone: 'amber' };
-  return { label: 'In stock', tone: 'green' };
+  if (product.stock_milli <= 0) return { label: 'Out of stock', tone: 'danger' };
+  if (product.stock_milli <= product.min_stock_milli) return { label: 'Low stock', tone: 'warn' };
+  return { label: 'In stock', tone: 'ok' };
 }

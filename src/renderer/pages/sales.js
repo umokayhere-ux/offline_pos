@@ -3,6 +3,7 @@ import { money, qty, dateTime, todayKey, paymentLabel } from '../utils/format.js
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 import { dataTable, pager } from '../components/table.js';
 
 /** Sales history. Sales are never edited or deleted — corrections are refunds. */
@@ -41,10 +42,10 @@ async function render(ctx) {
     const totals = state.data.totals || {};
     const revenue = (totals.total_pesewas || 0) - (totals.refunded_pesewas || 0);
     mount(summaryHost, [
-      el('div.stat.accent', [el('div.label', 'Gross sales'), el('div.value.sm', money(totals.total_pesewas || 0))]),
-      el('div.stat.red', [el('div.label', 'Refunded'), el('div.value.sm', money(totals.refunded_pesewas || 0))]),
-      el('div.stat.green', [el('div.label', 'Net revenue'), el('div.value.sm', money(revenue))]),
-      el('div.stat.blue', [
+      el('div.stat', [el('div.label', 'Gross sales'), el('div.value.sm', money(totals.total_pesewas || 0))]),
+      el('div.stat', [el('div.label', 'Refunded'), el('div.value.sm', money(totals.refunded_pesewas || 0))]),
+      el('div.stat', [el('div.label', 'Net revenue'), el('div.value.sm', money(revenue))]),
+      el('div.stat', [
         el('div.label', 'Gross profit'),
         el('div.value.sm', money(revenue - (totals.cogs_pesewas || 0)))
       ])
@@ -60,11 +61,11 @@ async function render(ctx) {
           { label: 'Items', align: 'right', render: (row) => String(row.item_count) },
           { label: 'Method', render: (row) => el('span.badge-pill', paymentLabel(row.payment_method)) },
           { label: 'Status', render: (row) => (row.status === 'completed'
-            ? el('span.badge-pill.green', 'Completed')
-            : el('span.badge-pill.amber', row.status === 'refunded' ? 'Refunded' : 'Part refunded')) },
+            ? el('span.badge-pill.ok', 'Completed')
+            : el('span.badge-pill.warn', row.status === 'refunded' ? 'Refunded' : 'Part refunded')) },
           { label: 'Total', align: 'right', render: (row) => el('strong.money', money(row.total_pesewas)) },
           { label: 'Owed', align: 'right', render: (row) => (row.debt_pesewas > 0
-            ? el('span.badge-pill.red', money(row.debt_pesewas)) : '—') }
+            ? el('span.badge-pill.danger', money(row.debt_pesewas)) : '—') }
         ],
         rows: state.data.rows,
         onRowClick: (row) => detail(row.id),
@@ -120,7 +121,7 @@ async function render(ctx) {
             { label: 'Cost then', align: 'right', render: (row) => el('span.text-sm.muted', money(row.cost_price_pesewas)) },
             { label: 'Discount', align: 'right', render: (row) => (row.discount_pesewas ? `-${money(row.discount_pesewas)}` : '—') },
             { label: 'Refunded', align: 'right', render: (row) => (row.refunded_qty_milli > 0
-              ? el('span.badge-pill.amber', `${qty(row.refunded_qty_milli)} · ${money(row.refunded_pesewas)}`) : '—') },
+              ? el('span.badge-pill.warn', `${qty(row.refunded_qty_milli)} · ${money(row.refunded_pesewas)}`) : '—') },
             { label: 'Line total', align: 'right', render: (row) => el('strong.money', money(row.line_total_pesewas)) }
           ],
           rows: items
@@ -155,7 +156,7 @@ async function render(ctx) {
           ? el('button.btn', {
             type: 'button',
             onclick: () => { instance.close(null); ctx.navigate('refunds', { saleId: sale.id }); }
-          }, '↩ Refund items')
+          }, [icon('refunds', { size: 15 }), 'Refund items'])
           : null,
         el('span.grow'),
         el('button.btn', {
@@ -172,7 +173,7 @@ async function render(ctx) {
                 el('button.btn.primary', {
                   type: 'button',
                   onclick: async () => { await tryCall('print', 'receipt', { saleId: sale.id }); previewModal.close(null); }
-                }, '🖨 Print')
+                }, [icon('print', { size: 15 }), 'Print'])
               ])
             });
           }
@@ -185,7 +186,7 @@ async function render(ctx) {
             event.currentTarget.disabled = false;
             if (result.ok && result.data.printed) toast.success('Receipt sent to the printer.');
           }
-        }, '🖨 Print receipt'),
+        }, [icon('print', { size: 15 }), 'Print receipt']),
         el('button.btn', { type: 'button', onclick: () => instance.close(null) }, 'Close')
       ])
     });

@@ -80,8 +80,11 @@ function renderReceiptHtml(data) {
       ? ['Total account balance', Money.format(data.customerBalancePesewas)] : null
   ].filter(Boolean).map(([label, value]) => `<tr><td>${label}</td><td class="amt">${escapeHtml(value)}</td></tr>`).join('');
 
-  const logo = receipt.showLogo && shop.logoPath
-    ? `<img class="logo" src="${escapeHtml(shop.logoPath)}" alt="" />`
+  // The logo must be inlined as a data: URL — a print window cannot load a
+  // file path from disk. `logoDataUrl` is prepared by the print service.
+  const logoSource = shop.logoDataUrl || '';
+  const logo = receipt.showLogo && logoSource
+    ? `<img class="logo" src="${escapeHtml(logoSource)}" alt="" />`
     : '';
 
   const headerLines = [
@@ -106,7 +109,11 @@ function renderReceiptHtml(data) {
     -webkit-print-color-adjust: exact;
   }
   .center { text-align: center; }
-  .logo { max-width: 40mm; max-height: 20mm; margin-bottom: 4px; }
+  .logo {
+    max-width: ${receipt.paperWidth === '58mm' ? '32mm' : (receipt.paperWidth === 'A4' ? '55mm' : '44mm')};
+    max-height: ${receipt.paperWidth === '58mm' ? '16mm' : '22mm'};
+    margin: 0 auto 5px; display: block; object-fit: contain;
+  }
   .shop-name { font-size: ${width.title}; font-weight: 700; letter-spacing: .3px; }
   .shop-line, .motto { font-size: ${isNarrow ? '9px' : '12px'}; }
   .motto { font-style: italic; margin-top: 2px; }

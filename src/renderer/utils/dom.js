@@ -1,3 +1,5 @@
+import { icon } from '../components/icons.js';
+
 // Tiny DOM helpers. Everything the UI renders goes through `el`/`text`, so user
 // data is inserted as text nodes and can never be interpreted as markup.
 
@@ -105,7 +107,7 @@ export function badge(label, tone = '') {
 
 export function emptyState(title, message, action = null) {
   return el('div.empty-state', [
-    el('div.icon', '📭'),
+    el('div.icon-wrap', icon('inbox', { size: 30, stroke: 1.4 })),
     el('div.title', title),
     message ? el('div', message) : null,
     action ? el('div.mt-16', action) : null

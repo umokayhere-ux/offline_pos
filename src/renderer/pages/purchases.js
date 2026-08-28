@@ -3,6 +3,7 @@ import { money, moneyInput, parseMoney, qty, parseQty, dateTime, todayKey } from
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 import { dataTable, pager } from '../components/table.js';
 
 /** Purchases / restocking. Recording one raises stock and the supplier balance. */
@@ -41,8 +42,8 @@ async function render(ctx) {
           { label: 'Total', align: 'right', render: (row) => el('strong.money', money(row.total_pesewas)) },
           { label: 'Paid', align: 'right', render: (row) => el('span.money', money(row.paid_pesewas)) },
           { label: 'Balance', align: 'right', render: (row) => (row.balance_pesewas > 0
-            ? el('span.badge-pill.amber', money(row.balance_pesewas))
-            : el('span.badge-pill.green', 'Paid')) },
+            ? el('span.badge-pill.warn', money(row.balance_pesewas))
+            : el('span.badge-pill.ok', 'Paid')) },
           { label: 'Recorded by', render: (row) => el('span.text-sm', row.user_name || '') }
         ],
         rows: state.data.rows,
@@ -121,7 +122,7 @@ async function render(ctx) {
     let note = '';
 
     const linesHost = el('div');
-    const totalNode = el('div.stat.accent');
+    const totalNode = el('div.stat');
     const errorNode = el('div.callout.danger.hidden');
     const paidInput = el('input.amount', { type: 'text', placeholder: '0.00', oninput: (e) => { amountPaid = e.target.value; repaint(); } });
 
@@ -173,7 +174,7 @@ async function render(ctx) {
               el('td.right', el('strong.money', lineTotal === null ? '—' : money(lineTotal))),
               el('td.right', el('button.btn.sm.danger', {
                 type: 'button', onclick: () => { lines.splice(index, 1); repaint(); }
-              }, '✕'))
+              }, icon('trash', { size: 15 })))
             ]);
           }))
         ]));

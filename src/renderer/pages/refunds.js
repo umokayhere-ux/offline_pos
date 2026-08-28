@@ -3,6 +3,7 @@ import { money, qty, qtyExact, parseQty, dateTime, todayKey } from '../utils/for
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 import { dataTable, pager } from '../components/table.js';
 
 /**
@@ -47,7 +48,7 @@ async function render(ctx) {
           { label: 'Customer', render: (row) => row.customer_name || el('span.faint', 'Walk-in') },
           { label: 'Reason', render: (row) => el('span.text-sm', row.reason) },
           { label: 'Restocked', render: (row) => (row.restock
-            ? el('span.badge-pill.green', 'Yes') : el('span.badge-pill.amber', 'No')) },
+            ? el('span.badge-pill.ok', 'Yes') : el('span.badge-pill.warn', 'No')) },
           { label: 'Staff', render: (row) => el('span.text-sm', row.user_name || '') },
           { label: 'Amount', align: 'right', render: (row) => el('strong.money', money(row.amount_pesewas)) }
         ],
@@ -161,7 +162,7 @@ async function render(ctx) {
     }
 
     const selections = new Map();
-    const totalNode = el('div.stat.red');
+    const totalNode = el('div.stat');
     const errorNode = el('div.callout.danger.hidden');
     let restock = true;
     let method = sale.payment_method === 'credit' ? 'credit' : 'cash';
@@ -322,7 +323,7 @@ async function render(ctx) {
       })]),
       el('span.grow'),
       ctx.can('refunds.manage')
-        ? el('button.btn.primary', { type: 'button', onclick: () => findSaleDialog() }, '↩ Start a refund')
+        ? el('button.btn.primary', { type: 'button', onclick: () => findSaleDialog() }, [icon('refunds', { size: 15 }), 'Start a refund'])
         : null
     ]),
     tableHost);

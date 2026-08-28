@@ -1,6 +1,7 @@
 import { el, field, mount } from '../utils/dom.js';
 import { call } from '../services/api.js';
 import { toast } from '../components/toast.js';
+import { icon } from '../components/icons.js';
 
 /**
  * First-run wizard. Nothing is written until the final step, so the shop owner
@@ -40,7 +41,7 @@ export function renderSetup({ onComplete, status }) {
     { key: 'finish', title: 'Finish', hint: 'Review and start trading.' }
   ];
 
-  const container = el('div.auth-screen');
+  const container = el('div.auth-screen.single');
   const bind = (object, key) => (event) => { object[key] = event.target.value; };
   const bindCheck = (object, key) => (event) => { object[key] = event.target.checked; };
 
@@ -225,9 +226,9 @@ export function renderSetup({ onComplete, status }) {
         state.step += 1;
         render();
       }
-    }, step.key === 'finish' ? 'Finish setup' : 'Continue →');
+    }, step.key === 'finish' ? 'Finish setup' : ['Continue', icon('arrowRight', { size: 15 })]);
 
-    mount(container, el('div.auth-card.wide', [
+    mount(container, el('div.auth-form-side', el('div.auth-card.wide', [
       el('div.wizard-steps', steps.map((_s, index) => el('div.step', {
         class: index < state.step ? 'done' : (index === state.step ? 'current' : '')
       }))),
@@ -238,12 +239,12 @@ export function renderSetup({ onComplete, status }) {
       body(),
       el('div.row.mt-24', [
         state.step > 0
-          ? el('button.btn', { type: 'button', onclick: () => { state.step -= 1; render(); } }, '← Back')
+          ? el('button.btn', { type: 'button', onclick: () => { state.step -= 1; render(); } }, [icon('arrowLeft', { size: 15 }), 'Back'])
           : el('span'),
         el('span.grow'),
         next
       ])
-    ]));
+    ])));
 
     const autofocus = container.querySelector('[data-autofocus]');
     if (autofocus) setTimeout(() => autofocus.focus(), 30);

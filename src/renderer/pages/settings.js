@@ -3,6 +3,7 @@ import { qty } from '../utils/format.js';
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 
 /**
  * Settings.
@@ -172,7 +173,7 @@ async function render(ctx) {
               const result = await tryCall('print', 'test', { paperWidth: values.paperWidth });
               if (result.ok && result.data.printed) toast.success('Test receipt sent to the printer.');
             }
-          }, '🖨 Print a test receipt'),
+          }, [icon('print', { size: 15 }), 'Print a test receipt']),
           el('span.grow'),
           el('button.btn.primary', {
             type: 'button',
@@ -219,7 +220,7 @@ async function render(ctx) {
               if (result.ok && result.data.printed) toast.success('Test receipt sent.');
               else if (result.ok && result.data.cancelled) toast.info('Print cancelled.');
             }
-          }, '🖨 Print a test receipt'),
+          }, [icon('print', { size: 15 }), 'Print a test receipt']),
           el('button.btn', {
             type: 'button',
             onclick: async () => {
@@ -229,7 +230,7 @@ async function render(ctx) {
               toast.success(`${state.printers.length} printer(s) found.`);
               paint();
             }
-          }, '⟳ Refresh printer list'),
+          }, [icon('refresh', { size: 15 }), 'Refresh printer list']),
           el('span.grow'),
           el('button.btn.primary', {
             type: 'button',

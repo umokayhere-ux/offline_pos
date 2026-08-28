@@ -1,5 +1,6 @@
 import { el, mount, clear } from './utils/dom.js';
 import { initials, setQuantityPrecision } from './utils/format.js';
+import { icon } from './components/icons.js';
 import { call, tryCall, onEvent } from './services/api.js';
 import { toast } from './components/toast.js';
 import { closeTopModal, confirmModal } from './components/modal.js';
@@ -31,22 +32,22 @@ import { settingsPage } from './pages/settings.js';
  */
 
 const ROUTES = [
-  { id: 'dashboard', label: 'Dashboard', icon: '▦', page: dashboardPage, section: 'Overview' },
-  { id: 'pos', label: 'Point of Sale', icon: '🛒', page: posPage, section: 'Overview' },
-  { id: 'sales', label: 'Sales', icon: '🧾', page: salesPage, section: 'Trading' },
-  { id: 'refunds', label: 'Refunds', icon: '↩', page: refundsPage, section: 'Trading' },
-  { id: 'debts', label: 'Debts', icon: '⏳', page: debtsPage, section: 'Trading' },
-  { id: 'customers', label: 'Customers', icon: '👥', page: customersPage, section: 'Trading' },
-  { id: 'products', label: 'Products', icon: '📦', page: productsPage, section: 'Stock' },
-  { id: 'categories', label: 'Categories', icon: '🏷', page: categoriesPage, section: 'Stock' },
-  { id: 'purchases', label: 'Purchases', icon: '🚚', page: purchasesPage, section: 'Stock' },
-  { id: 'suppliers', label: 'Suppliers', icon: '🏭', page: suppliersPage, section: 'Stock' },
-  { id: 'expenses', label: 'Expenses', icon: '💸', page: expensesPage, section: 'Money' },
-  { id: 'reports', label: 'Reports', icon: '📈', page: reportsPage, section: 'Money' },
-  { id: 'users', label: 'Users', icon: '🔑', page: usersPage, section: 'System' },
-  { id: 'backup', label: 'Backup', icon: '💾', page: backupPage, section: 'System' },
-  { id: 'activity', label: 'Activity Log', icon: '📝', page: activityPage, section: 'System' },
-  { id: 'settings', label: 'Settings', icon: '⚙', page: settingsPage, section: 'System' }
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', page: dashboardPage, section: 'Overview' },
+  { id: 'pos', label: 'Point of Sale', icon: 'pos', page: posPage, section: 'Overview' },
+  { id: 'sales', label: 'Sales', icon: 'sales', page: salesPage, section: 'Trading' },
+  { id: 'refunds', label: 'Refunds', icon: 'refunds', page: refundsPage, section: 'Trading' },
+  { id: 'debts', label: 'Debts', icon: 'debts', page: debtsPage, section: 'Trading' },
+  { id: 'customers', label: 'Customers', icon: 'customers', page: customersPage, section: 'Trading' },
+  { id: 'products', label: 'Products', icon: 'products', page: productsPage, section: 'Stock' },
+  { id: 'categories', label: 'Categories', icon: 'categories', page: categoriesPage, section: 'Stock' },
+  { id: 'purchases', label: 'Purchases', icon: 'purchases', page: purchasesPage, section: 'Stock' },
+  { id: 'suppliers', label: 'Suppliers', icon: 'suppliers', page: suppliersPage, section: 'Stock' },
+  { id: 'expenses', label: 'Expenses', icon: 'expenses', page: expensesPage, section: 'Money' },
+  { id: 'reports', label: 'Reports', icon: 'reports', page: reportsPage, section: 'Money' },
+  { id: 'users', label: 'Users', icon: 'users', page: usersPage, section: 'System' },
+  { id: 'backup', label: 'Backup', icon: 'backup', page: backupPage, section: 'System' },
+  { id: 'activity', label: 'Activity Log', icon: 'activity', page: activityPage, section: 'System' },
+  { id: 'settings', label: 'Settings', icon: 'settings', page: settingsPage, section: 'System' }
 ];
 
 const app = {
@@ -193,7 +194,7 @@ function buildSidebar() {
       dataset: { route: route.id },
       class: route.id === app.route ? 'active' : '',
       onclick: () => navigate(route.id)
-    }, [el('span.icon', route.icon), el('span', route.label)]));
+    }, [icon(route.icon), el('span', route.label)]));
   }
 
   return el('aside.sidebar', [
@@ -215,7 +216,7 @@ function buildSidebar() {
           el('div.role', app.user.roleLabel || app.user.role)
         ])
       ]),
-      el('button.nav-item', { type: 'button', onclick: signOut }, [el('span.icon', '⎋'), el('span', 'Sign out')])
+      el('button.nav-item', { type: 'button', onclick: signOut }, [icon('logout'), el('span', 'Sign out')])
     ])
   ]);
 }
@@ -237,10 +238,11 @@ function buildTopbar() {
       el('div.subtitle#page-subtitle', '')
     ]),
     el('span.grow'),
-    app.settings['app.demo_mode'] ? el('span.badge-pill.purple', 'DEMO MODE') : null,
-    el('span.offline-pill', ['●', 'Offline ready']),
+    app.settings['app.demo_mode'] ? el('span.badge-pill.brand', 'DEMO MODE') : null,
+    el('span.offline-pill', [icon('offline', { size: 14 }), 'Offline ready']),
     clock,
-    el('button.btn.sm', { type: 'button', title: 'Quick sale (Ctrl+2)', onclick: () => navigate('pos') }, '🛒 New sale')
+    el('button.btn.sm', { type: 'button', title: 'Quick sale (Ctrl+2)', onclick: () => navigate('pos') },
+      [icon('pos', { size: 15 }), 'New sale'])
   ]);
 }
 
@@ -305,12 +307,12 @@ async function boot() {
     if (session.authenticated) await startSession(session.user);
     else await showLogin();
   } catch (error) {
-    mount(app.root, el('div.auth-screen', el('div.auth-card', [
-      el('div.auth-logo', '!'),
+    mount(app.root, el('div.auth-screen.single', el('div.auth-form-side', el('div.auth-card', [
+      el('div.auth-logo', icon('warning', { size: 24 })),
       el('h1', 'iTtEk POS could not start'),
       el('p.sub', error.message || String(error)),
       el('button.btn.primary.block', { type: 'button', onclick: () => window.location.reload() }, 'Retry')
-    ])));
+    ]))));
   }
 }
 

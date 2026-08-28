@@ -3,6 +3,7 @@ import { money, moneyInput, parseMoney, qty, qtyExact, parseQty, paymentLabel, d
 import { api, tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal, confirmModal, hasOpenModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 
 /**
  * Point of Sale.
@@ -238,7 +239,7 @@ async function render(ctx) {
           el('div.r-price', [
             el('div.p', money(product.selling_price_pesewas)),
             el('div.s', {
-              class: product.stock_milli <= 0 ? 'badge-pill red' : (product.stock_milli <= product.min_stock_milli ? 'badge-pill amber' : 'muted')
+              class: product.stock_milli <= 0 ? 'badge-pill danger' : (product.stock_milli <= product.min_stock_milli ? 'badge-pill warn' : 'muted')
             }, product.stock_milli <= 0 ? 'Out of stock' : (product.stock_milli <= product.min_stock_milli ? 'Low' : 'In stock'))
           ])
         ])));
@@ -295,8 +296,8 @@ async function render(ctx) {
             el('div.r-meta', customer.phone || 'No phone number')
           ]),
           el('div.r-price', customer.balance_pesewas > 0
-            ? el('span.badge-pill.red', `Owes ${money(customer.balance_pesewas)}`)
-            : el('span.badge-pill.green', 'No debt'))
+            ? el('span.badge-pill.danger', `Owes ${money(customer.balance_pesewas)}`)
+            : el('span.badge-pill.ok', 'No debt'))
         ]))
       ]);
     };
@@ -675,7 +676,7 @@ async function render(ctx) {
             await tryCall('print', 'receipt', { saleId: sale.sale.id });
             instance.close(null);
           }
-        }, '🖨 Print receipt'),
+        }, [icon('print', { size: 16 }), 'Print receipt']),
         el('button.btn', { type: 'button', onclick: () => instance.close(null) }, 'Next customer')
       ]),
       onClose: () => { if (scanInput) scanInput.focus(); }
@@ -694,7 +695,7 @@ async function render(ctx) {
         el('button.btn.primary', {
           type: 'button',
           onclick: async () => { await tryCall('print', 'receipt', { saleId }); instance.close(null); }
-        }, '🖨 Print')
+        }, [icon('print', { size: 16 }), 'Print'])
       ])
     });
   }
@@ -704,7 +705,7 @@ async function render(ctx) {
   function cartTable() {
     if (state.items.length === 0) {
       return el('div.pos-empty', [
-        el('div.big', '🛒'),
+        el('div.big', icon('pos', { size: 46, stroke: 1.3 })),
         el('div.strong', 'Scan a barcode to begin'),
         el('div.muted', 'The scan box is always focused — just scan.'),
         el('div.muted.mt-8', [
@@ -746,16 +747,16 @@ async function render(ctx) {
           ].join(''))
         ]),
         el('td', el('div.qty-control', [
-          el('button', { type: 'button', title: 'Decrease', onclick: () => setQuantity(index, item.quantityMilli - 1000) }, '−'),
+          el('button', { type: 'button', title: 'Decrease', onclick: () => setQuantity(index, item.quantityMilli - 1000) }, icon('minus', { size: 15 })),
           qtyInput,
-          el('button', { type: 'button', title: 'Increase', onclick: () => setQuantity(index, item.quantityMilli + 1000) }, '+')
+          el('button', { type: 'button', title: 'Increase', onclick: () => setQuantity(index, item.quantityMilli + 1000) }, icon('plus', { size: 15 }))
         ])),
         el('td.right', priceInput),
         el('td.right', el('button.btn.sm.ghost', {
           type: 'button', title: 'Line discount', onclick: () => lineDiscountDialog(index)
         }, lineTotals && lineTotals.totals.discount ? `-${money(lineTotals.totals.discount)}` : '—')),
         el('td.right', el('span.line-total', lineTotals ? money(lineTotals.netLineTotal) : '…')),
-        el('td.right', el('button.remove-btn', { type: 'button', title: 'Remove', onclick: () => removeItem(index) }, '✕'))
+        el('td.right', el('button.remove-btn', { type: 'button', title: 'Remove', onclick: () => removeItem(index) }, icon('trash', { size: 16 })))
       ]);
       item.flash = false;
       return row;
@@ -808,7 +809,7 @@ async function render(ctx) {
     }
     updateChangeBox();
 
-    const methodButton = (method, icon) => el('button.method-btn', {
+    const methodButton = (method, iconName) => el('button.method-btn', {
       type: 'button',
       class: state.paymentMethod === method ? 'active' : '',
       onclick: () => {
@@ -816,18 +817,18 @@ async function render(ctx) {
         if (method !== 'cash') state.tenderedPesewas = method === 'credit' ? 0 : null;
         draw();
       }
-    }, [el('span.m-icon', icon), el('span', paymentLabel(method))]);
+    }, [el('span.m-icon', icon(iconName, { size: 18 })), el('span', paymentLabel(method))]);
 
     return el('aside.pos-panel', [
       el('div.panel-section', el('div.customer-row', [
-        el('span', '👤'),
+        icon('user', { size: 17, className: 'muted' }),
         el('span.customer-name', state.customer ? state.customer.name : 'Walk-in customer'),
         state.customer && state.customer.balance_pesewas > 0
           ? el('span.customer-debt', `Owes ${money(state.customer.balance_pesewas)}`)
           : null,
         el('button.btn.sm', { type: 'button', onclick: openCustomerPicker }, state.customer ? 'Change' : 'Select'),
         state.customer
-          ? el('button.btn.sm.ghost', { type: 'button', title: 'Remove customer', onclick: () => { state.customer = null; draw(); } }, '✕')
+          ? el('button.btn.sm.ghost.icon-only', { type: 'button', title: 'Remove customer', onclick: () => { state.customer = null; draw(); } }, icon('close', { size: 15 }))
           : null
       ])),
 
@@ -848,10 +849,10 @@ async function render(ctx) {
         el('div.panel-section', [
           el('div.field', [el('label', 'Payment method')]),
           el('div.method-grid', [
-            methodButton('cash', '💵'),
-            methodButton('momo', '📱'),
-            methodButton('card', '💳'),
-            methodButton('credit', '📋')
+            methodButton('cash', 'cash'),
+            methodButton('momo', 'momo'),
+            methodButton('card', 'card'),
+            methodButton('credit', 'credit')
           ])
         ]),
 
@@ -923,15 +924,15 @@ async function render(ctx) {
     mount(container,
       el('div.pos-main', [
         el('div.pos-scan', [
-          el('div.scan-field', [el('span.scan-icon', '🔍'), scanInput]),
-          el('button.btn', { type: 'button', onclick: () => openProductSearch() }, 'Search (F2)'),
-          el('button.btn', { type: 'button', onclick: openCustomerPicker }, 'Customer (F3)'),
+          el('div.scan-field', [el('span.scan-icon', icon('barcode', { size: 18 })), scanInput]),
+          el('button.btn', { type: 'button', onclick: () => openProductSearch() }, [icon('search', { size: 15 }), 'Search (F2)']),
+          el('button.btn', { type: 'button', onclick: openCustomerPicker }, [icon('user', { size: 15 }), 'Customer (F3)']),
           state.lastSale
             ? el('button.btn', {
               type: 'button',
               title: 'Reprint the last receipt',
               onclick: () => tryCall('print', 'receipt', { saleId: state.lastSale.sale.id })
-            }, '🖨 Last receipt')
+            }, [icon('print', { size: 15 }), 'Last receipt'])
             : null
         ]),
         el('div.pos-cart', cartTable()),

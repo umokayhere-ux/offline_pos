@@ -10,8 +10,8 @@ import { barChart, lineChart, donutChart, rankedBars } from '../components/chart
  * application, so these cards cannot drift from the reports.
  */
 
-function stat(label, value, { tone = '', hint = '', small = false, onClick = null } = {}) {
-  return el(`div.stat${tone ? `.${tone}` : ''}`, {
+function stat(label, value, { hint = '', small = false, onClick = null } = {}) {
+  return el('div.stat', {
     class: onClick ? 'clickable' : '',
     onclick: onClick
   }, [
@@ -27,20 +27,17 @@ async function render(ctx) {
 
   const topCards = el('div.grid.cols-4', [
     stat("Today's sales", money(today.revenue), {
-      tone: 'accent',
       hint: `${today.saleCount} sale${today.saleCount === 1 ? '' : 's'}${today.refunds ? ` · ${money(today.refunds)} refunded` : ''}`,
       onClick: () => ctx.navigate('sales')
     }),
     stat("Today's gross profit", money(today.grossProfit), {
-      tone: 'blue', hint: `Margin ${percent(today.grossMarginPercent)}`
+      hint: `Margin ${percent(today.grossMarginPercent)}`
     }),
     stat("Today's expenses", money(today.expenses), {
-      tone: 'amber',
       hint: `${today.expenseCount} entr${today.expenseCount === 1 ? 'y' : 'ies'}`,
       onClick: ctx.can('expenses.view') ? () => ctx.navigate('expenses') : null
     }),
     stat("Today's net profit", money(today.netProfit), {
-      tone: today.netProfit >= 0 ? 'green' : 'red',
       hint: 'Gross profit less expenses'
     })
   ]);
@@ -51,15 +48,15 @@ async function render(ctx) {
       onClick: ctx.can('products.view') ? () => ctx.navigate('products') : null
     }),
     stat('Low stock', String(stock.lowStock), {
-      small: true, tone: stock.lowStock > 0 ? 'amber' : '', hint: 'At or below reorder level',
+      small: true, hint: 'At or below reorder level',
       onClick: ctx.can('products.view') ? () => ctx.navigate('products', { stockState: 'low' }) : null
     }),
     stat('Out of stock', String(stock.outOfStock), {
-      small: true, tone: stock.outOfStock > 0 ? 'red' : '', hint: 'Nothing left on the shelf',
+      small: true, hint: 'Nothing left on the shelf',
       onClick: ctx.can('products.view') ? () => ctx.navigate('products', { stockState: 'out' }) : null
     }),
     stat('Customer debts', money(outstanding.customerDebtPesewas), {
-      small: true, tone: outstanding.customerDebtPesewas > 0 ? 'purple' : '',
+      small: true,
       hint: `${outstanding.openDebtCount} open account${outstanding.openDebtCount === 1 ? '' : 's'}`,
       onClick: ctx.can('debts.view') ? () => ctx.navigate('debts') : null
     }),
@@ -76,17 +73,17 @@ async function render(ctx) {
       el('span.text-sm.muted', `${money(data.weekSeries.reduce((s, d) => s + d.revenuePesewas, 0))} total`)
     ]),
     el('div.card-body', barChart(data.weekSeries, [
-      { key: 'revenuePesewas', label: 'Revenue', colour: '#0d9488' },
-      { key: 'grossProfitPesewas', label: 'Gross profit', colour: '#2563eb' },
-      { key: 'expensesPesewas', label: 'Expenses', colour: '#d97706' }
+      { key: 'revenuePesewas', label: 'Revenue', colour: '#1d4ed8' },
+      { key: 'grossProfitPesewas', label: 'Gross profit', colour: '#7ea6f7' },
+      { key: 'expensesPesewas', label: 'Expenses', colour: '#172554' }
     ]))
   ]);
 
   const trendChart = el('div.card', [
     el('div.card-head', [el('h2', 'Profit trend — last 30 days')]),
     el('div.card-body', lineChart(data.monthSeries, [
-      { key: 'revenuePesewas', label: 'Revenue', colour: '#0d9488' },
-      { key: 'netProfitPesewas', label: 'Net profit', colour: '#7c3aed' }
+      { key: 'revenuePesewas', label: 'Revenue', colour: '#1d4ed8' },
+      { key: 'netProfitPesewas', label: 'Net profit', colour: '#bcd2fb' }
     ]))
   ]);
 
@@ -128,7 +125,7 @@ async function render(ctx) {
           el('div.text-sm.muted', row.category_name || 'Uncategorised')
         ]) },
         { label: 'In stock', align: 'right', render: (row) => el('span', {
-          class: row.stock_milli <= 0 ? 'badge-pill red' : 'badge-pill amber'
+          class: row.stock_milli <= 0 ? 'badge-pill danger' : 'badge-pill warn'
         }, `${qty(row.stock_milli)} ${row.unit}`) },
         { label: 'Reorder at', align: 'right', render: (row) => qty(row.min_stock_milli) }
       ],

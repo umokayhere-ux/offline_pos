@@ -1,4 +1,5 @@
 import { el, emptyState } from '../utils/dom.js';
+import { icon } from './icons.js';
 
 /**
  * A data table with optional sorting and paging.
@@ -23,14 +24,16 @@ export function dataTable({
   const head = el('tr', columns.map((column) => {
     const sortable = !!(column.sortKey && onSort);
     const isSorted = sort && sort.key === column.sortKey;
-    const arrow = isSorted ? (sort.direction === 'desc' ? ' ▼' : ' ▲') : '';
     return el('th', {
       class: `${column.align === 'right' ? 'right' : ''} ${sortable ? 'sortable' : ''}`.trim(),
       style: column.width ? { width: column.width } : null,
       onclick: sortable
         ? () => onSort(column.sortKey, isSorted && sort.direction === 'asc' ? 'desc' : 'asc')
         : null
-    }, `${column.label}${arrow}`);
+    }, [
+      column.label,
+      isSorted ? icon(sort.direction === 'desc' ? 'chevronDown' : 'chevronUp', { size: 13 }) : null
+    ]);
   }));
 
   const body = el('tbody', rows.map((row, index) => {
@@ -62,10 +65,10 @@ export function pager({ page, pages, total, pageSize, onPage }) {
   return el('div.pagination', [
     el('span.muted.text-sm', `Showing ${from}–${to} of ${total}`),
     el('span.grow'),
-    el('button.btn.sm', { type: 'button', disabled: page <= 1, onclick: () => onPage(1) }, '« First'),
-    el('button.btn.sm', { type: 'button', disabled: page <= 1, onclick: () => onPage(page - 1) }, '‹ Previous'),
+    el('button.btn.sm.icon-only', { type: 'button', title: 'First page', disabled: page <= 1, onclick: () => onPage(1) }, icon('chevronsLeft', { size: 15 })),
+    el('button.btn.sm', { type: 'button', disabled: page <= 1, onclick: () => onPage(page - 1) }, [icon('chevronLeft', { size: 15 }), 'Previous']),
     el('span.text-sm.muted', `Page ${page} of ${pages}`),
-    el('button.btn.sm', { type: 'button', disabled: page >= pages, onclick: () => onPage(page + 1) }, 'Next ›'),
-    el('button.btn.sm', { type: 'button', disabled: page >= pages, onclick: () => onPage(pages) }, 'Last »')
+    el('button.btn.sm', { type: 'button', disabled: page >= pages, onclick: () => onPage(page + 1) }, ['Next', icon('chevronRight', { size: 15 })]),
+    el('button.btn.sm.icon-only', { type: 'button', title: 'Last page', disabled: page >= pages, onclick: () => onPage(pages) }, icon('chevronsRight', { size: 15 }))
   ]);
 }

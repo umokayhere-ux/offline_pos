@@ -6,6 +6,7 @@ const { AppError } = require('../../shared/errors');
 const settings = require('../services/settings.service');
 const saleService = require('../services/sale.service');
 const activity = require('../services/activity.service');
+const { fileToDataUrl } = require('../utils/file');
 
 /**
  * Printing abstraction.
@@ -62,10 +63,16 @@ async function printHtml(html, { silent = false, printerName = '', copies = 1 } 
   }
 }
 
+/** The shop profile with its logo inlined, ready for a print window. */
+function printableShop() {
+  const shop = settings.shopProfile();
+  return { ...shop, logoDataUrl: fileToDataUrl(shop.logoPath) };
+}
+
 async function printReceipt(saleId, { user = null, silent = null, copies = 1 } = {}) {
   const { sale, items } = saleService.getSale(saleId);
   const receipt = settings.receiptSettings();
-  const shop = settings.shopProfile();
+  const shop = printableShop();
 
   const html = renderReceiptHtml({
     sale, items, shop, receipt,
@@ -89,7 +96,7 @@ function receiptPreview(saleId) {
   const { sale, items } = saleService.getSale(saleId);
   return renderReceiptHtml({
     sale, items,
-    shop: settings.shopProfile(),
+    shop: printableShop(),
     receipt: settings.receiptSettings(),
     customerBalancePesewas: sale.customer_balance_pesewas
   });
@@ -98,7 +105,7 @@ function receiptPreview(saleId) {
 async function printTestReceipt({ user = null, printerName = null, paperWidth = null } = {}) {
   const receipt = settings.receiptSettings();
   const html = renderTestReceiptHtml({
-    shop: settings.shopProfile(),
+    shop: printableShop(),
     receipt: { ...receipt, paperWidth: paperWidth || receipt.paperWidth }
   });
   const result = await printHtml(html, {
@@ -130,4 +137,4 @@ async function printDocument(html, { silent = false, printerName = '' } = {}) {
   return printHtml(html, { silent, printerName });
 }
 
-module.exports = { printReceipt, printTestReceipt, printDocument, receiptPreview, listPrinters, printHtml };
+module.exports = { printReceipt, printTestReceipt, printDocument, receiptPreview, listPrinters, printHtml, printableShop };

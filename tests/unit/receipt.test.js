@@ -72,6 +72,31 @@ test('receipt content is HTML-escaped, so a product name cannot inject markup', 
   assert.match(html, /&lt;script&gt;/);
 });
 
+test('the shop logo is inlined so a print window can actually load it', () => {
+  const dataUrl = 'data:image/png;base64,iVBORw0KGgo=';
+  const html = renderReceiptHtml({
+    sale, items, receipt: { ...receipt, showLogo: true },
+    shop: { ...shop, logoPath: 'C:\\Users\\Shop\\logo.png', logoDataUrl: dataUrl }
+  });
+  assert.match(html, /<img class="logo" src="data:image\/png;base64,/);
+  assert.doesNotMatch(html, /C:\\Users/, 'a raw file path would never load in the print window');
+});
+
+test('a shop with no logo prints no image tag at all', () => {
+  const html = renderReceiptHtml({
+    sale, items, receipt: { ...receipt, showLogo: true }, shop: { ...shop, logoDataUrl: '' }
+  });
+  assert.doesNotMatch(html, /<img/);
+});
+
+test('the logo is left out when the receipt setting is off', () => {
+  const html = renderReceiptHtml({
+    sale, items, receipt: { ...receipt, showLogo: false },
+    shop: { ...shop, logoDataUrl: 'data:image/png;base64,iVBORw0KGgo=' }
+  });
+  assert.doesNotMatch(html, /<img/);
+});
+
 test('the test receipt renders without a database', () => {
   const html = renderTestReceiptHtml({ shop, receipt });
   assert.match(html, /TEST-PRINT/);

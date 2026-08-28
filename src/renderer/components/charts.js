@@ -9,7 +9,9 @@ import { money } from '../utils/format.js';
  * arithmetic beyond scaling to pixels.
  */
 
-const PALETTE = ['#0d9488', '#2563eb', '#d97706', '#7c3aed', '#dc2626', '#0891b2', '#65a30d', '#db2777'];
+/* One hue. Series are told apart by lightness, not by different colours, so a
+   chart never introduces a second brand colour into the interface. */
+const PALETTE = ['#1d4ed8', '#7ea6f7', '#172554', '#bcd2fb', '#3b7bec', '#5b93f5', '#0f1f4b', '#dbe6fe'];
 
 function svg(tag, attrs = {}, children = []) {
   const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -57,11 +59,11 @@ export function barChart(data, series, { height = 220, formatValue = money } = {
     const y = padding.top + plotHeight - (value / maxValue) * plotHeight;
     children.push(svg('line', {
       x1: padding.left, x2: width - padding.right, y1: y, y2: y,
-      stroke: '#e2e8f0', 'stroke-width': 1
+      stroke: '#e6eaf0', 'stroke-width': 1
     }));
     children.push(svgText(formatValue(value), {
       x: padding.left - 8, y: y + 4, 'text-anchor': 'end',
-      'font-size': 10, fill: '#94a3b8'
+      'font-size': 10, fill: '#98a2b3'
     }));
   }
 
@@ -88,7 +90,7 @@ export function barChart(data, series, { height = 220, formatValue = money } = {
     if (data.length <= 16 || index % Math.ceil(data.length / 12) === 0) {
       children.push(svgText(label, {
         x: padding.left + index * slot + slot / 2, y: height - 10,
-        'text-anchor': 'middle', 'font-size': 10, fill: '#64748b'
+        'text-anchor': 'middle', 'font-size': 10, fill: '#667085'
       }));
     }
   });
@@ -130,8 +132,8 @@ export function lineChart(data, series, { height = 240, formatValue = money } = 
   for (let i = 0; i <= 4; i += 1) {
     const value = minValue + (span / 4) * i;
     const y = yFor(value);
-    children.push(svg('line', { x1: padding.left, x2: width - padding.right, y1: y, y2: y, stroke: '#e2e8f0' }));
-    children.push(svgText(formatValue(value), { x: padding.left - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 10, fill: '#94a3b8' }));
+    children.push(svg('line', { x1: padding.left, x2: width - padding.right, y1: y, y2: y, stroke: '#e6eaf0' }));
+    children.push(svgText(formatValue(value), { x: padding.left - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 10, fill: '#98a2b3' }));
   }
 
   series.forEach((s, seriesIndex) => {
@@ -150,7 +152,7 @@ export function lineChart(data, series, { height = 240, formatValue = money } = 
   data.forEach((row, i) => {
     if (data.length <= 16 || i % Math.ceil(data.length / 10) === 0) {
       children.push(svgText(String(row.day).slice(5), {
-        x: xFor(i), y: height - 8, 'text-anchor': 'middle', 'font-size': 10, fill: '#64748b'
+        x: xFor(i), y: height - 8, 'text-anchor': 'middle', 'font-size': 10, fill: '#667085'
       }));
     }
   });
@@ -204,9 +206,9 @@ export function donutChart(slices, { size = 180, formatValue = money } = {}) {
   });
 
   children.push(svgText(formatValue(total), {
-    x: radius, y: radius + 2, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: '#0f172a'
+    x: radius, y: radius + 2, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: '#101828'
   }));
-  children.push(svgText('total', { x: radius, y: radius + 17, 'text-anchor': 'middle', 'font-size': 10, fill: '#94a3b8' }));
+  children.push(svgText('total', { x: radius, y: radius + 17, 'text-anchor': 'middle', 'font-size': 10, fill: '#98a2b3' }));
 
   return el('div.row.gap-16', { style: { alignItems: 'center', flexWrap: 'wrap' } }, [
     svg('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}` }, children),

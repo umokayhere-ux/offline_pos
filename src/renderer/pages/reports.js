@@ -3,6 +3,7 @@ import { money, qty, percent, dateTime, date, todayKey, paymentLabel } from '../
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { dataTable } from '../components/table.js';
+import { icon } from '../components/icons.js';
 import { barChart, lineChart, donutChart, rankedBars } from '../components/charts.js';
 
 /**
@@ -62,22 +63,21 @@ async function render(ctx) {
 
   function summaryCards(summary) {
     return el('div.grid.cols-4', [
-      el('div.stat.accent', [
+      el('div.stat', [
         el('div.label', 'Revenue'), el('div.value', money(summary.revenue)),
         el('div.hint', `${summary.saleCount} sale${summary.saleCount === 1 ? '' : 's'}`)
       ]),
-      el('div.stat.blue', [
+      el('div.stat', [
         el('div.label', 'Gross profit'), el('div.value', money(summary.grossProfit)),
         el('div.hint', `Margin ${percent(summary.grossMarginPercent)}`)
       ]),
-      el('div.stat.amber', [
+      el('div.stat', [
         el('div.label', 'Expenses'), el('div.value', money(summary.expenses)),
         el('div.hint', `${summary.expenseCount} entr${summary.expenseCount === 1 ? 'y' : 'ies'}`)
       ]),
-      el('div.stat', {
-        class: summary.netProfit >= 0 ? 'green' : 'red'
-      }, [
-        el('div.label', 'Net profit'), el('div.value', money(summary.netProfit)),
+      el('div.stat', [
+        el('div.label', 'Net profit'),
+        el('div.value', { class: summary.netProfit < 0 ? 'negative' : '' }, money(summary.netProfit)),
         el('div.hint', `Margin ${percent(summary.netMarginPercent)}`)
       ])
     ]);
@@ -103,8 +103,8 @@ async function render(ctx) {
           el('div.card', [
             el('div.card-head', el('h3', 'Daily takings')),
             el('div.card-body', barChart(data.series, [
-              { key: 'revenuePesewas', label: 'Revenue', colour: '#0d9488' },
-              { key: 'grossProfitPesewas', label: 'Gross profit', colour: '#2563eb' }
+              { key: 'revenuePesewas', label: 'Revenue', colour: '#1d4ed8' },
+              { key: 'grossProfitPesewas', label: 'Gross profit', colour: '#7ea6f7' }
             ]))
           ]),
           el('div.card', [
@@ -162,8 +162,8 @@ async function render(ctx) {
           el('div.card', [
             el('div.card-head', el('h3', 'Trend')),
             el('div.card-body', lineChart(data.series, [
-              { key: 'grossProfitPesewas', label: 'Gross profit', colour: '#2563eb' },
-              { key: 'netProfitPesewas', label: 'Net profit', colour: '#7c3aed' }
+              { key: 'grossProfitPesewas', label: 'Gross profit', colour: '#7ea6f7' },
+              { key: 'netProfitPesewas', label: 'Net profit', colour: '#bcd2fb' }
             ]))
           ])
         ]),
@@ -195,10 +195,10 @@ async function render(ctx) {
       node = el('div', [
         el('div.grid.cols-5', [
           el('div.stat', [el('div.label', 'Products'), el('div.value.sm', String(data.totals.totalProducts))]),
-          el('div.stat.amber', [el('div.label', 'Low stock'), el('div.value.sm', String(data.totals.lowStock))]),
-          el('div.stat.red', [el('div.label', 'Out of stock'), el('div.value.sm', String(data.totals.outOfStock))]),
-          el('div.stat.accent', [el('div.label', 'Stock value (cost)'), el('div.value.sm', money(data.totals.stockValuePesewas))]),
-          el('div.stat.green', [el('div.label', 'If all sold'), el('div.value.sm', money(data.totals.retailValuePesewas)),
+          el('div.stat', [el('div.label', 'Low stock'), el('div.value.sm', String(data.totals.lowStock))]),
+          el('div.stat', [el('div.label', 'Out of stock'), el('div.value.sm', String(data.totals.outOfStock))]),
+          el('div.stat', [el('div.label', 'Stock value (cost)'), el('div.value.sm', money(data.totals.stockValuePesewas))]),
+          el('div.stat', [el('div.label', 'If all sold'), el('div.value.sm', money(data.totals.retailValuePesewas)),
             el('div.hint', `Potential profit ${money(data.totals.potentialProfitPesewas)}`)])
         ]),
         el('div.card.mt-16', [
@@ -239,9 +239,9 @@ async function render(ctx) {
 
       node = el('div', [
         el('div.grid.cols-3', [
-          el('div.stat.amber', [el('div.label', 'Total expenses'), el('div.value', money(summaryResult.data.expenses))]),
+          el('div.stat', [el('div.label', 'Total expenses'), el('div.value', money(summaryResult.data.expenses))]),
           el('div.stat', [el('div.label', 'Entries'), el('div.value.sm', String(listResult.data.total))]),
-          el('div.stat.blue', [el('div.label', 'Share of revenue'), el('div.value.sm',
+          el('div.stat', [el('div.label', 'Share of revenue'), el('div.value.sm',
             percent(summaryResult.data.revenue > 0 ? (summaryResult.data.expenses / summaryResult.data.revenue) * 100 : 0))])
         ]),
         el('div.card.mt-16', [
@@ -275,10 +275,10 @@ async function render(ctx) {
 
       node = el('div', [
         el('div.grid.cols-4', [
-          el('div.stat.red', [el('div.label', 'Total outstanding'), el('div.value', money(data.totals.outstandingPesewas))]),
-          el('div.stat.green', [el('div.label', 'Collected in period'), el('div.value.sm', money(data.totals.collectedPesewas)),
+          el('div.stat', [el('div.label', 'Total outstanding'), el('div.value', money(data.totals.outstandingPesewas))]),
+          el('div.stat', [el('div.label', 'Collected in period'), el('div.value.sm', money(data.totals.collectedPesewas)),
             el('div.hint', `${data.totals.collectedCount} payment${data.totals.collectedCount === 1 ? '' : 's'}`)]),
-          el('div.stat.amber', [el('div.label', 'Credit issued in period'), el('div.value.sm', money(data.totals.issuedPesewas))]),
+          el('div.stat', [el('div.label', 'Credit issued in period'), el('div.value.sm', money(data.totals.issuedPesewas))]),
           el('div.stat', [el('div.label', 'Open accounts'), el('div.value.sm', String(data.rows.length))])
         ]),
         el('div.card.mt-16', [
@@ -317,7 +317,7 @@ async function render(ctx) {
             { label: 'Purchases', align: 'right', render: (row) => String(row.purchase_count) },
             { label: 'Spent in period', align: 'right', render: (row) => el('strong.money', money(row.spent_pesewas)) },
             { label: 'Owes', align: 'right', render: (row) => (row.balance_pesewas > 0
-              ? el('span.badge-pill.red', money(row.balance_pesewas)) : '—') },
+              ? el('span.badge-pill.danger', money(row.balance_pesewas)) : '—') },
             { label: 'Last purchase', render: (row) => el('span.text-sm', row.last_purchase_at ? date(row.last_purchase_at) : '—') }
           ],
           rows: result.data.rows,
@@ -335,8 +335,8 @@ async function render(ctx) {
       node = el('div', [
         el('div.grid.cols-3', [
           el('div.stat', [el('div.label', 'Total purchased'), el('div.value.sm', money(result.data.totals.purchased_pesewas))]),
-          el('div.stat.green', [el('div.label', 'Total paid'), el('div.value.sm', money(result.data.totals.paid_pesewas))]),
-          el('div.stat.amber', [el('div.label', 'Still owed'), el('div.value.sm', money(result.data.totals.balance_pesewas))])
+          el('div.stat', [el('div.label', 'Total paid'), el('div.value.sm', money(result.data.totals.paid_pesewas))]),
+          el('div.stat', [el('div.label', 'Still owed'), el('div.value.sm', money(result.data.totals.balance_pesewas))])
         ]),
         el('div.card.mt-16', [
           el('div.card-head', el('h3', 'Suppliers')),
@@ -364,7 +364,7 @@ async function render(ctx) {
 
       node = el('div', [
         el('div.grid.cols-2', [
-          el('div.stat.red', [el('div.label', 'Total refunded'), el('div.value', money((result.data.totals || {}).amount_pesewas || 0))]),
+          el('div.stat', [el('div.label', 'Total refunded'), el('div.value', money((result.data.totals || {}).amount_pesewas || 0))]),
           el('div.stat', [el('div.label', 'Refunds'), el('div.value.sm', String(result.data.total))])
         ]),
         el('div.card.mt-16', [
@@ -518,8 +518,8 @@ async function render(ctx) {
         }, preset.label)))]),
         customRange,
         el('span.grow'),
-        el('button.btn', { type: 'button', onclick: exportCsv }, '⬇ Export CSV'),
-        el('button.btn', { type: 'button', onclick: printReport }, '🖨 Print / Save as PDF')
+        el('button.btn', { type: 'button', onclick: exportCsv }, [icon('download', { size: 15 }), 'Export CSV']),
+        el('button.btn', { type: 'button', onclick: printReport }, [icon('print', { size: 15 }), 'Print / Save as PDF'])
       ]),
       el('div.text-sm.muted.mt-8', 'To save a report as PDF, choose “Microsoft Print to PDF” in the print dialog.')
     ])),

@@ -3,6 +3,7 @@ import { dateTime, relative } from '../utils/format.js';
 import { tryCall } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal, confirmModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 import { dataTable } from '../components/table.js';
 
 /**
@@ -39,7 +40,7 @@ async function render(ctx) {
   function paint() {
     const lastRun = state.settings['backup.last_run_at'];
     mount(statusHost, [
-      el('div.stat.accent', [
+      el('div.stat', [
         el('div.label', 'Last backup'),
         el('div.value.sm', lastRun ? relative(lastRun) : 'Never'),
         el('div.hint', lastRun ? dateTime(lastRun) : 'Take your first backup now')
@@ -50,7 +51,7 @@ async function render(ctx) {
           state.settings['backup.directory'] || 'Application data folder'),
         el('div.hint', 'Where new backups are written')
       ]),
-      el('div.stat.blue', [
+      el('div.stat', [
         el('div.label', 'Automatic backups'),
         el('div.value.sm', { style: { textTransform: 'capitalize' } }, state.settings['backup.frequency'] || 'daily'),
         el('div.hint', 'Runs shortly after the application starts')
@@ -67,13 +68,13 @@ async function render(ctx) {
           ]) },
           { label: 'Taken', render: (row) => el('span.text-sm', dateTime(row.created_at)) },
           { label: 'Type', render: (row) => el('span.badge-pill', {
-            class: row.kind === 'automatic' ? 'blue' : (row.kind === 'pre_restore' ? 'amber' : '')
+            class: row.kind === 'automatic' ? 'brand' : (row.kind === 'pre_restore' ? 'warn' : '')
           }, row.kind.replace('_', ' ')) },
           { label: 'Size', align: 'right', render: (row) => formatSize(row.size_bytes) },
           { label: 'By', render: (row) => el('span.text-sm', row.user_name || 'System') },
           { label: 'Status', render: (row) => (row.exists
-            ? el('span.badge-pill.green', 'Available')
-            : el('span.badge-pill.red', 'File missing')) },
+            ? el('span.badge-pill.ok', 'Available')
+            : el('span.badge-pill.danger', 'File missing')) },
           { label: '', align: 'right', render: (row) => el('div.actions', [
             row.exists ? el('button.btn.sm', { type: 'button', onclick: () => restoreFrom(row.path) }, 'Restore') : null,
             el('button.btn.sm.danger', { type: 'button', onclick: () => remove(row) }, 'Delete')
@@ -83,7 +84,7 @@ async function render(ctx) {
         empty: {
           title: 'No backups yet',
           message: 'A backup is a complete copy of your shop data. Keep one on a USB stick as well as on this PC.',
-          action: el('button.btn.primary', { type: 'button', onclick: createBackup }, '💾 Create a backup now')
+          action: el('button.btn.primary', { type: 'button', onclick: createBackup }, [icon('save', { size: 15 }), 'Create a backup now'])
         }
       }))
     ]);
@@ -198,9 +199,9 @@ async function render(ctx) {
   mount(container,
     el('div.card.mb-16', el('div.card-body', [
       el('div.row.wrap', [
-        el('button.btn.primary', { type: 'button', onclick: createBackup }, '💾 Create backup now'),
-        el('button.btn', { type: 'button', onclick: restoreFromFile }, '⟲ Restore from a file'),
-        el('button.btn', { type: 'button', onclick: chooseFolder }, '📁 Choose backup folder'),
+        el('button.btn.primary', { type: 'button', onclick: createBackup }, [icon('save', { size: 15 }), 'Create backup now']),
+        el('button.btn', { type: 'button', onclick: restoreFromFile }, [icon('restore', { size: 15 }), 'Restore from a file']),
+        el('button.btn', { type: 'button', onclick: chooseFolder }, [icon('folder', { size: 15 }), 'Choose backup folder']),
         el('span.grow'),
         el('div.field', { style: { marginBottom: 0 } }, [
           el('label', 'Automatic backups'),

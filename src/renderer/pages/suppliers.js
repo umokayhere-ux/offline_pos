@@ -33,8 +33,8 @@ async function render(ctx) {
           ]) },
           { label: 'Email', render: (row) => el('span.text-sm', row.email || '—') },
           { label: 'Balance owed', align: 'right', render: (row) => (row.balance_pesewas > 0
-            ? el('span.badge-pill.amber', money(row.balance_pesewas))
-            : el('span.badge-pill.green', 'Settled')) },
+            ? el('span.badge-pill.warn', money(row.balance_pesewas))
+            : el('span.badge-pill.ok', 'Settled')) },
           { label: '', align: 'right', render: (row) => el('div.actions', [
             el('button.btn.sm', { type: 'button', onclick: () => profile(row) }, 'View'),
             ctx.can('suppliers.manage') && row.balance_pesewas > 0
@@ -179,7 +179,7 @@ async function render(ctx) {
         el('div.grid.cols-4', [
           el('div.stat', [el('div.label', 'Total purchased'), el('div.value.sm', money(totals.purchased_pesewas))]),
           el('div.stat', [el('div.label', 'Total paid'), el('div.value.sm', money(totals.paid_pesewas))]),
-          el('div.stat', { class: person.balance_pesewas > 0 ? 'amber' : 'green' }, [
+          el('div.stat', [
             el('div.label', 'Balance owed'), el('div.value.sm', money(person.balance_pesewas))
           ]),
           el('div.stat', [el('div.label', 'Purchases'), el('div.value.sm', String(totals.purchase_count))])
@@ -192,7 +192,7 @@ async function render(ctx) {
             { label: 'Total', align: 'right', render: (row) => money(row.total_pesewas) },
             { label: 'Paid', align: 'right', render: (row) => money(row.paid_pesewas) },
             { label: 'Balance', align: 'right', render: (row) => (row.balance_pesewas > 0
-              ? el('span.badge-pill.amber', money(row.balance_pesewas)) : el('span.badge-pill.green', 'Paid')) }
+              ? el('span.badge-pill.warn', money(row.balance_pesewas)) : el('span.badge-pill.ok', 'Paid')) }
           ],
           rows: purchases,
           empty: { title: 'No purchases recorded from this supplier', message: '' }

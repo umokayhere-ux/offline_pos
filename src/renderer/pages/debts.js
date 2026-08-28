@@ -33,11 +33,11 @@ async function render(ctx) {
   function paint() {
     const totals = state.data.totals || {};
     mount(summaryHost, [
-      el('div.stat.red', [
+      el('div.stat', [
         el('div.label', 'Outstanding'), el('div.value', money(totals.outstanding_pesewas || 0)),
         el('div.hint', `${state.data.total} account${state.data.total === 1 ? '' : 's'} in this view`)
       ]),
-      el('div.stat.green', [
+      el('div.stat', [
         el('div.label', 'Already collected'), el('div.value', money(totals.paid_pesewas || 0))
       ]),
       el('div.stat', [
@@ -58,7 +58,7 @@ async function render(ctx) {
           { label: 'Paid', align: 'right', render: (row) => el('span.money', money(row.paid_pesewas)) },
           { label: 'Outstanding', align: 'right', render: (row) => el('strong.money', money(row.outstanding_pesewas)) },
           { label: 'Status', render: (row) => el('span.badge-pill', {
-            class: row.status === 'settled' ? 'green' : (row.status === 'written_off' ? 'amber' : 'red')
+            class: row.status === 'settled' ? 'ok' : (row.status === 'written_off' ? 'warn' : 'danger')
           }, row.status.replace('_', ' ')) },
           { label: '', align: 'right', render: (row) => el('div.actions', [
             el('button.btn.sm', { type: 'button', onclick: () => detail(row) }, 'History'),
@@ -94,8 +94,8 @@ async function render(ctx) {
       body: el('div', [
         el('div.grid.cols-3', [
           el('div.stat', [el('div.label', 'Original amount'), el('div.value.sm', money(head.original_pesewas))]),
-          el('div.stat.green', [el('div.label', 'Paid so far'), el('div.value.sm', money(head.paid_pesewas))]),
-          el('div.stat.red', [el('div.label', 'Outstanding'), el('div.value.sm', money(head.outstanding_pesewas))])
+          el('div.stat', [el('div.label', 'Paid so far'), el('div.value.sm', money(head.paid_pesewas))]),
+          el('div.stat', [el('div.label', 'Outstanding'), el('div.value.sm', money(head.outstanding_pesewas))])
         ]),
         el('div.detail-list.mt-16', [
           el('div.item', [el('span.k', 'Opened'), el('span.v', dateTime(head.opened_at))]),

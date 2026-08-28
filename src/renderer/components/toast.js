@@ -1,4 +1,5 @@
 import { el } from '../utils/dom.js';
+import { icon } from './icons.js';
 
 let stack = null;
 
@@ -13,7 +14,7 @@ function container() {
 function show(message, tone = '', timeout = 4000) {
   const node = el(`div.toast${tone ? `.${tone}` : ''}`, [
     el('div.toast-body', message),
-    el('button.toast-close', { type: 'button', title: 'Dismiss', onclick: () => node.remove() }, '×')
+    el('button.toast-close', { type: 'button', title: 'Dismiss', onclick: () => node.remove() }, icon('close', { size: 15 }))
   ]);
   container().appendChild(node);
   if (timeout > 0) setTimeout(() => node.remove(), timeout);

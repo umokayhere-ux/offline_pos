@@ -1,4 +1,5 @@
 import { el, clear } from '../utils/dom.js';
+import { icon } from './icons.js';
 
 /**
  * Modal dialogs. Escape closes, focus moves into the dialog, and the backdrop
@@ -47,7 +48,7 @@ export function openModal({
 
   const head = el('div.modal-head', [
     el('h2', title),
-    el('button.btn.ghost.icon', { type: 'button', title: 'Close', onclick: () => close(null) }, '✕')
+    el('button.btn.ghost.icon-only', { type: 'button', title: 'Close', onclick: () => close(null) }, icon('close', { size: 17 }))
   ]);
   const bodyNode = el('div.modal-body');
   bodyNode.appendChild(typeof body === 'function' ? body(instance) : body);

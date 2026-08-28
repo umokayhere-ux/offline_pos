@@ -3,6 +3,7 @@ import { money, moneyInput, parseMoney, qty, qtyExact, parseQty, stockBadge, dat
 import { api, tryCall, constants } from '../services/api.js';
 import { toast } from '../components/toast.js';
 import { openModal, confirmModal, promptModal } from '../components/modal.js';
+import { icon } from '../components/icons.js';
 import { dataTable, pager } from '../components/table.js';
 
 /** Product catalogue: search, filter, create, edit, stock adjustment, labels, CSV. */
@@ -72,7 +73,7 @@ async function render(ctx) {
             label: 'Margin', align: 'right',
             render: (row) => {
               const margin = row.selling_price_pesewas - row.cost_price_pesewas;
-              return el('span.money', { class: margin < 0 ? 'badge-pill red' : '' }, money(margin));
+              return el('span.money', { class: margin < 0 ? 'badge-pill danger' : '' }, money(margin));
             }
           },
           {
@@ -391,7 +392,7 @@ async function render(ctx) {
           columns: [
             { label: 'When', render: (row) => el('span.text-sm', dateTime(row.created_at)) },
             { label: 'Reason', render: (row) => el('span.badge-pill', row.reason) },
-            { label: 'Change', align: 'right', render: (row) => el('strong', { class: row.change_milli < 0 ? 'badge-pill red' : 'badge-pill green' }, `${row.change_milli > 0 ? '+' : ''}${qty(row.change_milli)}`) },
+            { label: 'Change', align: 'right', render: (row) => el('strong', { class: row.change_milli < 0 ? 'badge-pill danger' : 'badge-pill ok' }, `${row.change_milli > 0 ? '+' : ''}${qty(row.change_milli)}`) },
             { label: 'After', align: 'right', render: (row) => qty(row.after_milli) },
             { label: 'By', render: (row) => el('span.text-sm', row.user_name || 'System') },
             { label: 'Note', render: (row) => el('span.text-sm.muted', row.note || '') }
@@ -402,7 +403,7 @@ async function render(ctx) {
       ]),
       footer: () => el('div.row', [
         ctx.can('products.manage') && item.barcode
-          ? el('button.btn', { type: 'button', onclick: () => printLabels(item) }, '🏷 Print labels')
+          ? el('button.btn', { type: 'button', onclick: () => printLabels(item) }, [icon('tag', { size: 15 }), 'Print labels'])
           : null,
         el('span.grow'),
         el('button.btn', { type: 'button', onclick: () => instance.close(null) }, 'Close'),
@@ -433,7 +434,7 @@ async function render(ctx) {
             if (result.ok && result.data.printed) toast.success('Labels sent to the printer.');
             instance.close(null);
           }
-        }, '🖨 Print')
+        }, [icon('print', { size: 15 }), 'Print'])
       ])
     });
   }
@@ -460,8 +461,8 @@ async function render(ctx) {
       size: 'xwide',
       body: el('div', [
         el('div.grid.cols-3', [
-          el('div.stat.green', [el('div.label', 'Ready to import'), el('div.value', String(summary.validCount))]),
-          el('div.stat.red', [el('div.label', 'With problems'), el('div.value', String(summary.invalidCount))]),
+          el('div.stat', [el('div.label', 'Ready to import'), el('div.value', String(summary.validCount))]),
+          el('div.stat', [el('div.label', 'With problems'), el('div.value', String(summary.invalidCount))]),
           el('div.stat', [el('div.label', 'New categories'), el('div.value.sm', summary.newCategories.length ? summary.newCategories.join(', ') : 'None')])
         ]),
         invalid.length > 0
@@ -554,9 +555,9 @@ async function render(ctx) {
       el('option', { value: 'all' }, 'All')
     ])]),
     el('span.grow'),
-    ctx.can('products.view') ? el('button.btn', { type: 'button', onclick: exportCsv }, '⬇ Export CSV') : null,
-    ctx.can('products.manage') ? el('button.btn', { type: 'button', onclick: importCsv }, '⬆ Import CSV') : null,
-    ctx.can('products.manage') ? el('button.btn.primary', { type: 'button', onclick: () => productForm(null) }, '+ Add product') : null
+    ctx.can('products.view') ? el('button.btn', { type: 'button', onclick: exportCsv }, [icon('download', { size: 15 }), 'Export CSV']) : null,
+    ctx.can('products.manage') ? el('button.btn', { type: 'button', onclick: importCsv }, [icon('upload', { size: 15 }), 'Import CSV']) : null,
+    ctx.can('products.manage') ? el('button.btn.primary', { type: 'button', onclick: () => productForm(null) }, [icon('plus', { size: 15 }), 'Add product']) : null
   ]);
 
   mount(container, filters, tableHost);
