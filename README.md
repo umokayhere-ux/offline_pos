@@ -348,6 +348,26 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 Or, to change nothing at all, call the batch shim instead: `npm.cmd install`.
 
+**`npm error code ECONNRESET` / `npm error network` during `npm install`.**
+The install pulls roughly 250MB, most of it Electron, so a slow or intermittent
+connection often drops partway. Make npm more patient, then run it again — it
+resumes from what has already been downloaded rather than starting over:
+
+```powershell
+npm config set fetch-retries 10
+npm config set fetch-retry-mintimeout 20000
+npm config set fetch-retry-maxtimeout 180000
+npm config set fetch-timeout 900000
+npm install
+```
+
+If a later step then complains that it cannot find Electron's version, that is
+the same problem: the install never finished. Run `npm install` until it
+completes cleanly before building.
+
+If it still cannot finish, build through GitHub Actions instead (below) — the
+runner has the bandwidth, and you download only the finished installer.
+
 **Clone into your own folder, not `C:\Windows\System32`.** An Administrator
 PowerShell window starts in `System32`, so `git clone` there drops the project
 into a protected system directory. Run `cd $HOME` first, and build from an
