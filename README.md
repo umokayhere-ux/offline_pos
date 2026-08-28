@@ -336,6 +336,23 @@ stamping the icon and version resources into the `.exe` uses `rcedit`, which nee
 Wine on a non-Windows host. Build on the shop's own platform and there is nothing
 extra to install.
 
+### Windows troubleshooting
+
+**`npm : File ...\npm.ps1 cannot be loaded because running scripts is disabled`**
+PowerShell blocks script files by default. Allow them for your own account (this
+still blocks unsigned scripts downloaded from the internet):
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Or, to change nothing at all, call the batch shim instead: `npm.cmd install`.
+
+**Clone into your own folder, not `C:\Windows\System32`.** An Administrator
+PowerShell window starts in `System32`, so `git clone` there drops the project
+into a protected system directory. Run `cd $HOME` first, and build from an
+ordinary (non-Administrator) PowerShell window.
+
 ### Building the installer without a Windows machine
 
 `.github/workflows/build-windows.yml` builds the installer on a GitHub-hosted
