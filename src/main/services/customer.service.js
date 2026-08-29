@@ -133,4 +133,39 @@ function profile(id) {
   return { customer, sales, debts, payments, totals };
 }
 
-module.exports = { list, quickSearch, get, create, update, remove, profile, validate };
+/**
+ * Resolve a customer typed straight into the till.
+ *
+ * The shop serves different people every day, so the cashier types a name and
+ * phone rather than picking from a list. A phone number is what makes a person
+ * the same person tomorrow: when one is given we reuse the existing record (so
+ * a debt keeps accumulating against one account), otherwise a fresh record is
+ * created for this sale.
+ *
+ * Returns null when nothing was typed — an ordinary anonymous walk-in.
+ */
+function findOrCreateForSale({ name = '', phone = '' } = {}, { user = null } = {}) {
+  const cleanName = String(name || '').trim();
+  const cleanPhone = normalisePhone(phone);
+  if (!cleanName && !cleanPhone) return null;
+
+  if (cleanPhone) {
+    const existing = getDb().prepare('SELECT * FROM customers WHERE phone = ?').get(cleanPhone);
+    if (existing) {
+      // Keep the name fresh if the cashier typed a fuller one this time.
+      if (cleanName && cleanName !== existing.name) {
+        getDb().prepare('UPDATE customers SET name = ?, updated_at = ? WHERE id = ?')
+          .run(cleanName, nowIso(), existing.id);
+        return get(existing.id);
+      }
+      return existing;
+    }
+  }
+
+  if (!cleanName) throw new ValidationError('Enter the customer name.');
+  return create({ name: cleanName, phone: cleanPhone || '' }, { user });
+}
+
+module.exports = {
+  list, quickSearch, get, create, update, remove, profile, validate, findOrCreateForSale
+};

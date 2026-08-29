@@ -105,7 +105,9 @@ async function refreshBadges() {
   if (!result.ok) return;
   app.badges = {
     products: (result.data.stock.lowStock || 0) + (result.data.stock.outOfStock || 0),
-    debts: result.data.outstanding.openDebtCount || 0
+    // A sales attendant gets a dashboard scoped to their own day, which carries
+    // no shop-wide debt figures.
+    debts: (result.data.outstanding && result.data.outstanding.openDebtCount) || 0
   };
   renderSidebarBadges();
 }
@@ -160,6 +162,9 @@ function navigate(routeId, params = {}) {
       if (app.route !== routeId) return;   // the user navigated away while loading
       const node = result && result.node ? result.node : result;
       if (result && typeof result.cleanup === 'function') app.cleanup = result.cleanup;
+      // A page may only know its subtitle once it has loaded its data — the
+      // dashboard, for instance, says something different to a sales attendant.
+      if (result && result.subtitle && subtitleNode) subtitleNode.textContent = result.subtitle;
       mount(host, route.page.flush ? node : el('div.page-inner', node));
     })
     .catch((error) => {

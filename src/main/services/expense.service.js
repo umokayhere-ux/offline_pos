@@ -129,12 +129,13 @@ function get(id) {
   return row;
 }
 
-function list({ search = '', categoryId = null, from = null, to = null, includeVoided = false, page = 1, pageSize = 25 } = {}) {
+function list({ search = '', categoryId = null, userId = null, from = null, to = null, includeVoided = false, page = 1, pageSize = 25 } = {}) {
   const where = [];
   const params = {};
   if (!includeVoided) where.push("e.status = 'active'");
   if (search) { where.push('(e.description LIKE @search OR e.reference_no LIKE @search OR ec.name LIKE @search)'); params.search = `%${search}%`; }
   if (categoryId) { where.push('e.expense_category_id = @categoryId'); params.categoryId = categoryId; }
+  if (userId) { where.push('e.user_id = @userId'); params.userId = userId; }
   if (from) { where.push('e.spent_at >= @from'); params.from = from; }
   if (to) { where.push('e.spent_at < @to'); params.to = to; }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';

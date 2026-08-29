@@ -19,7 +19,9 @@ function newCartState() {
   return {
     items: [],          // { productId, product, quantityMilli, unitPricePesewas, discount }
     discount: { type: 'none', value: 0 },
-    customer: null,
+    customerName: '',
+    customerPhone: '',
+    customerNameInput: null,
     paymentMethod: 'cash',
     tenderedPesewas: null,
     totals: null,
@@ -105,7 +107,8 @@ async function render(ctx) {
   function clearCart({ silent = false } = {}) {
     state.items = [];
     state.discount = { type: 'none', value: 0 };
-    state.customer = null;
+    state.customerName = '';
+    state.customerPhone = '';
     state.tenderedPesewas = null;
     state.paymentMethod = 'cash';
     state.totals = null;
@@ -277,87 +280,43 @@ async function render(ctx) {
     search();
   }
 
-  // --------------------------- Customer picker -----------------------------
-
-  function openCustomerPicker() {
-    const searchInput = el('input', { type: 'search', 'data-autofocus': '', placeholder: 'Name or phone number…' });
-    const resultsNode = el('div.search-results');
-
-    const paint = (customers) => {
-      mount(resultsNode, [
-        el('div.search-result', {
-          onclick: () => { state.customer = null; instance.close(null); draw(); }
-        }, [el('div', [el('div.r-name', 'Walk-in customer'), el('div.r-meta', 'No account attached to this sale')])]),
-        ...customers.map((customer) => el('div.search-result', {
-          onclick: () => { state.customer = customer; instance.close(null); draw(); }
-        }, [
-          el('div', [
-            el('div.r-name', customer.name),
-            el('div.r-meta', customer.phone || 'No phone number')
-          ]),
-          el('div.r-price', customer.balance_pesewas > 0
-            ? el('span.badge-pill.danger', `Owes ${money(customer.balance_pesewas)}`)
-            : el('span.badge-pill.ok', 'No debt'))
-        ]))
-      ]);
-    };
-
-    const search = debounce(async () => {
-      const result = await tryCall('customers', 'quickSearch', { term: searchInput.value, limit: 25 }, { silent: true });
-      paint(result.ok ? result.data : []);
-    }, 160);
-
-    searchInput.addEventListener('input', search);
-
-    const instance = openModal({
-      title: 'Choose a customer',
-      size: 'wide',
-      body: el('div', [
-        el('div.row', [
-          el('div.grow', searchInput),
-          ctx.can('customers.manage')
-            ? el('button.btn', { type: 'button', onclick: () => { instance.close(null); newCustomerDialog(); } }, '+ New customer')
-            : null
-        ]),
-        el('div.mt-16', resultsNode)
-      ]),
-      onClose: () => { if (scanInput) scanInput.focus(); }
-    });
-
-    search();
+  /** Re-evaluate whether the sale may be completed (used as fields are typed). */
+  function updateCompleteButton() {
+    const completeBtn = container.querySelector('.complete-btn');
+    if (completeBtn) completeBtn.disabled = !canComplete();
   }
 
-  function newCustomerDialog() {
-    const nameInput = el('input', { type: 'text', 'data-autofocus': '', placeholder: 'Customer name' });
-    const phoneInput = el('input', { type: 'tel', placeholder: '024 000 0000' });
-    const errorNode = el('div.error-text.hidden');
+  // --------------------------- Customer ------------------------------------
 
-    const save = async (button) => {
-      button.disabled = true;
-      const result = await tryCall('customers', 'create', {
-        name: nameInput.value, phone: phoneInput.value
-      }, { silent: true });
-      button.disabled = false;
-      if (!result.ok) {
-        errorNode.textContent = result.error.message;
-        errorNode.classList.remove('hidden');
-        return;
-      }
-      state.customer = result.data;
-      toast.success(`${result.data.name} added.`);
-      instance.close(null);
-      draw();
-    };
-
-    const instance = openModal({
-      title: 'New customer',
-      size: 'narrow',
-      body: el('div', [errorNode, field('Name', nameInput), field('Phone number', phoneInput)]),
-      footer: () => el('div.row', [
-        el('button.btn', { type: 'button', onclick: () => instance.close(null) }, 'Cancel'),
-        el('button.btn.primary', { type: 'button', onclick: (event) => save(event.currentTarget) }, 'Save')
-      ])
+  /**
+   * The shop serves different people every day, so the cashier types the
+   * customer straight in rather than picking from a list. The main process
+   * matches on the phone number when one is given — that is what makes a
+   * returning debtor the same account tomorrow — and otherwise records the
+   * name against this sale alone.
+   */
+  function customerFields() {
+    const nameInput = el('input', {
+      type: 'text', value: state.customerName, placeholder: 'Customer name (optional)',
+      oninput: (event) => { state.customerName = event.target.value; updateCompleteButton(); }
     });
+    const phoneInput = el('input', {
+      type: 'tel', value: state.customerPhone, placeholder: 'Phone number (optional)',
+      oninput: (event) => { state.customerPhone = event.target.value; }
+    });
+
+    state.customerNameInput = nameInput;
+
+    return el('div.customer-fields', [
+      el('div.field', [
+        el('label', [icon('user', { size: 14 }), 'Customer']),
+        nameInput
+      ]),
+      el('div.field', [phoneInput]),
+      state.paymentMethod === 'credit'
+        ? el('div.help', 'A name is required for a credit sale so the debt can be traced. Add the phone number to keep one running account for a repeat customer.')
+        : null
+    ]);
   }
 
   // ------------------------------ Discount ---------------------------------
@@ -471,11 +430,13 @@ async function render(ctx) {
 
   async function holdSale() {
     if (state.items.length === 0) { toast.warn('There is nothing in the cart to hold.'); return; }
-    const label = state.customer ? state.customer.name : `Counter ${new Date().toLocaleTimeString('en-GB')}`;
+    const label = state.customerName.trim() || `Counter ${new Date().toLocaleTimeString('en-GB')}`;
     const result = await tryCall('pos', 'hold', {
       label,
-      customerId: state.customer ? state.customer.id : null,
+      customerId: null,
       cart: {
+        customerName: state.customerName,
+        customerPhone: state.customerPhone,
         items: state.items.map((item) => ({
           productId: item.productId,
           quantity: qtyExact(item.quantityMilli),
@@ -545,7 +506,7 @@ async function render(ctx) {
     });
   }
 
-  async function loadCart(cart, customerId) {
+  async function loadCart(cart, customerId) {   // eslint-disable-line no-unused-vars
     state.items = [];
     for (const item of (cart.items || [])) {
       const result = await tryCall('products', 'get', { id: item.productId }, { silent: true });
@@ -559,10 +520,8 @@ async function render(ctx) {
       });
     }
     state.discount = cart.discount || { type: 'none', value: 0 };
-    if (customerId) {
-      const customer = await tryCall('customers', 'get', { id: customerId }, { silent: true });
-      state.customer = customer.ok ? customer.data : null;
-    }
+    state.customerName = cart.customerName || '';
+    state.customerPhone = cart.customerPhone || '';
     reprice();
   }
 
@@ -587,7 +546,7 @@ async function render(ctx) {
     if (state.items.length === 0 || !state.totals || state.committing) return false;
     const { total, tendered, shortfall, isCredit } = tenderState();
     if (total <= 0) return false;
-    if (isCredit) return !!state.customer;
+    if (isCredit) return state.customerName.trim().length >= 2;
     if (state.paymentMethod === 'cash') return tendered >= total;
     return tendered === total || state.tenderedPesewas === null;
   }
@@ -596,8 +555,9 @@ async function render(ctx) {
     if (state.committing) return;
     const { total } = tenderState();
 
-    if (state.paymentMethod === 'credit' && !state.customer) {
-      toast.error('Select the customer this credit sale belongs to.');
+    if (state.paymentMethod === 'credit' && state.customerName.trim().length < 2) {
+      toast.error('Enter the customer name for this credit sale.');
+      if (state.customerNameInput) state.customerNameInput.focus();
       return;
     }
 
@@ -613,7 +573,8 @@ async function render(ctx) {
         discount: item.discount
       })),
       discount: state.discount,
-      customerId: state.customer ? state.customer.id : null,
+      customerName: state.customerName.trim(),
+      customerPhone: state.customerPhone.trim(),
       paymentMethod: state.paymentMethod,
       amountReceived: moneyInput(state.tenderedPesewas === null ? total : state.tenderedPesewas),
       clientRef: `pos-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
@@ -820,17 +781,7 @@ async function render(ctx) {
     }, [el('span.m-icon', icon(iconName, { size: 18 })), el('span', paymentLabel(method))]);
 
     return el('aside.pos-panel', [
-      el('div.panel-section', el('div.customer-row', [
-        icon('user', { size: 17, className: 'muted' }),
-        el('span.customer-name', state.customer ? state.customer.name : 'Walk-in customer'),
-        state.customer && state.customer.balance_pesewas > 0
-          ? el('span.customer-debt', `Owes ${money(state.customer.balance_pesewas)}`)
-          : null,
-        el('button.btn.sm', { type: 'button', onclick: openCustomerPicker }, state.customer ? 'Change' : 'Select'),
-        state.customer
-          ? el('button.btn.sm.ghost.icon-only', { type: 'button', title: 'Remove customer', onclick: () => { state.customer = null; draw(); } }, icon('close', { size: 15 }))
-          : null
-      ])),
+      el('div.panel-section', customerFields()),
 
       el('div.panel-scroll', [
         el('div.panel-section', el('div.totals-list', [
@@ -871,8 +822,8 @@ async function render(ctx) {
             ])
             : null,
           changeBox,
-          isCredit && !state.customer
-            ? el('div.callout.warn.mt-8', 'Select a customer before completing a credit sale.')
+          isCredit && state.customerName.trim().length < 2
+            ? el('div.callout.warn.mt-8', 'Enter the customer name before completing a credit sale.')
             : null
         ])
       ]),
@@ -926,7 +877,6 @@ async function render(ctx) {
         el('div.pos-scan', [
           el('div.scan-field', [el('span.scan-icon', icon('barcode', { size: 18 })), scanInput]),
           el('button.btn', { type: 'button', onclick: () => openProductSearch() }, [icon('search', { size: 15 }), 'Search (F2)']),
-          el('button.btn', { type: 'button', onclick: openCustomerPicker }, [icon('user', { size: 15 }), 'Customer (F3)']),
           state.lastSale
             ? el('button.btn', {
               type: 'button',
@@ -938,7 +888,7 @@ async function render(ctx) {
         el('div.pos-cart', cartTable()),
         el('div.shortcut-bar', [
           el('span.sc', [el('b', 'F2'), 'Search']),
-          el('span.sc', [el('b', 'F3'), 'Customer']),
+          el('span.sc', [el('b', 'F3'), 'Customer name']),
           el('span.sc', [el('b', 'F4'), 'Hold']),
           el('span.sc', [el('b', 'F5'), 'Payment']),
           el('span.sc', [el('b', 'F6'), 'Held sales']),
@@ -958,7 +908,10 @@ async function render(ctx) {
     if (hasOpenModal() && event.key !== 'Escape') return;
     switch (event.key) {
       case 'F2': event.preventDefault(); openProductSearch(); break;
-      case 'F3': event.preventDefault(); openCustomerPicker(); break;
+      case 'F3':
+        event.preventDefault();
+        if (state.customerNameInput) { state.customerNameInput.focus(); state.customerNameInput.select(); }
+        break;
       case 'F4': event.preventDefault(); holdSale(); break;
       case 'F5': {
         event.preventDefault();

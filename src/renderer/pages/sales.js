@@ -231,6 +231,8 @@ async function render(ctx) {
 
 export const salesPage = {
   title: 'Sales',
+  // Visible to everyone, but the main process narrows an attendant's view to
+  // their own sales for today — the filters below cannot widen it.
   subtitle: 'Every completed transaction',
   permission: null,
   render

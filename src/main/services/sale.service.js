@@ -10,6 +10,7 @@ const { nextNumber } = require('./sequence.service');
 const inventory = require('./inventory.service');
 const activity = require('./activity.service');
 const settings = require('./settings.service');
+const customerService = require('./customer.service');
 
 /**
  * Completing a sale is a single atomic operation. Either all of the following
@@ -105,7 +106,7 @@ function resolvePayment(input, totalPesewas) {
       ? 0
       : Money.parsePositive(input.amountReceived, 'Deposit');
     if (deposit > totalPesewas) throw new ValidationError('A deposit cannot be more than the sale total.');
-    if (!input.customerId) throw new ValidationError('Select the customer this credit sale belongs to.');
+    if (!input.customerId) throw new ValidationError('Enter the customer name for this credit sale.');
     return { method, received: deposit, paid: deposit, change: 0, debt: totalPesewas - deposit, depositMethod: input.depositMethod || 'cash' };
   }
 
@@ -140,19 +141,36 @@ function complete(input, { user }) {
   const allowNegativeGlobal = settings.get('inventory.allow_negative_stock', false) === true;
   assertStockAvailable(totals, { allowNegativeGlobal });
 
-  const customerId = input.customerId || null;
-  if (customerId) {
-    const customer = db.prepare('SELECT id FROM customers WHERE id = ?').get(customerId);
+  // The cashier types the customer straight into the till rather than picking
+  // from a list, because the shop serves different people every day. The record
+  // itself is resolved inside the transaction below, so a sale that fails never
+  // leaves a stray customer behind; here we only need to know whether one was
+  // named at all, which is what a credit sale requires.
+  if (input.customerId) {
+    const customer = db.prepare('SELECT id FROM customers WHERE id = ?').get(input.customerId);
     if (!customer) throw new ValidationError('That customer no longer exists.');
   }
+  const hasCustomer = !!(input.customerId
+    || String(input.customerName || '').trim()
+    || String(input.customerPhone || '').trim());
 
-  const payment = resolvePayment({ ...input, customerId }, totals.total);
+  const payment = resolvePayment({ ...input, customerId: hasCustomer ? 'named' : null }, totals.total);
   const isDemo = settings.get('app.demo_mode', false) === true;
 
   const run = db.transaction(() => {
     const at = nowIso();
     const invoiceNo = nextNumber('sale', { at: new Date(at) });
     const discount = Calc.normaliseDiscount(input.discount);
+
+    // Resolve (or create) the customer inside the transaction: if anything below
+    // fails, the customer record rolls back with the rest of the sale.
+    let customerId = input.customerId || null;
+    if (!customerId && hasCustomer) {
+      const resolved = customerService.findOrCreateForSale(
+        { name: input.customerName, phone: input.customerPhone }, { user }
+      );
+      customerId = resolved ? resolved.id : null;
+    }
 
     const saleInfo = db.prepare(`
       INSERT INTO sales (

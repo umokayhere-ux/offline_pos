@@ -23,6 +23,8 @@ function stat(label, value, { hint = '', small = false, onClick = null } = {}) {
 
 async function render(ctx) {
   const data = await api.dashboard.load();
+  if (data.scoped) return { node: staffView(data, ctx), subtitle: 'Your own work for today' };
+
   const { today, month, stock, outstanding } = data;
 
   const topCards = el('div.grid.cols-4', [
@@ -176,6 +178,71 @@ async function render(ctx) {
     el('div.grid.cols-3.mt-16', [topProductsCard, paymentsCard, expenseCard]),
     el('div.grid.cols-2.mt-16', [recentCard, lowStockCard]),
     el('div.grid.cols-2.mt-16', [monthCard, el('div')])
+  ]);
+}
+
+/**
+ * What a sales attendant sees: their own takings for today and the stock
+ * warnings they need. No shop-wide profit, cost prices, debts or balances —
+ * the main process does not even send them.
+ */
+function staffView(data, ctx) {
+  const { today, stock } = data;
+
+  return el('div', [
+    el('div.callout.info.mb-16', 'This is your own work for today. Sales made by other staff, and the shop totals, are not shown here.'),
+
+    el('div.grid.cols-4', [
+      stat('My sales today', money(today.revenue), {
+        hint: `${today.saleCount} sale${today.saleCount === 1 ? '' : 's'}${today.refunds ? ` · ${money(today.refunds)} refunded` : ''}`,
+        onClick: () => ctx.navigate('sales')
+      }),
+      stat('Average sale', money(today.averageSalePesewas), { hint: 'Across your sales today' }),
+      stat('Sold on credit', money(today.creditPesewas), { hint: 'Recorded as customer debt' }),
+      stat('My expenses today', money(today.expenses), {
+        hint: `${today.expenseCount} entr${today.expenseCount === 1 ? 'y' : 'ies'}`
+      })
+    ]),
+
+    el('div.grid.cols-2.mt-16', [
+      el('div.card', [
+        el('div.card-head', [el('h3', 'My sales today')]),
+        el('div.card-body.flush', dataTable({
+          columns: [
+            { label: 'Invoice', render: (row) => el('span.mono.text-sm', row.invoice_no) },
+            { label: 'Time', render: (row) => el('span.text-sm', dateTime(row.sold_at)) },
+            { label: 'Customer', render: (row) => row.customer_name || el('span.faint', 'Walk-in') },
+            { label: 'Method', render: (row) => el('span.badge-pill', paymentLabel(row.payment_method)) },
+            { label: 'Total', align: 'right', render: (row) => el('strong.money', money(row.total_pesewas)) }
+          ],
+          rows: data.recentSales || [],
+          empty: { title: 'No sales yet today', message: 'Your completed sales will appear here.' }
+        }))
+      ]),
+      el('div.card', [
+        el('div.card-head', [el('h3', 'Needs restocking')]),
+        el('div.card-body.flush', dataTable({
+          columns: [
+            { label: 'Product', render: (row) => el('div.strong', row.name) },
+            { label: 'In stock', align: 'right', render: (row) => el('span', {
+              class: row.stock_milli <= 0 ? 'badge-pill danger' : 'badge-pill warn'
+            }, `${qty(row.stock_milli)} ${row.unit}`) }
+          ],
+          rows: data.lowStockProducts || [],
+          empty: { title: 'Stock levels are healthy', message: '' }
+        }))
+      ])
+    ]),
+
+    el('div.grid.cols-2.mt-16', [
+      el('div.card', [
+        el('div.card-head', [el('h3', 'How you were paid today')]),
+        el('div.card-body', donutChart((data.paymentMethods || []).map((row) => ({
+          label: paymentLabel(row.payment_method), value: row.total_pesewas
+        }))))
+      ]),
+      el('div')
+    ])
   ]);
 }
 

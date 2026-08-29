@@ -76,6 +76,9 @@ const DEFAULT_ROLE_PERMISSIONS = Object.freeze({
     'products.view',
     'customers.view', 'customers.manage',
     'debts.view',
+    // Petty cash from the till is theirs to record; the IPC layer narrows what
+    // they can read back to their own entries for the current day.
+    'expenses.view', 'expenses.manage',
     'refunds.view'
   ]
 });

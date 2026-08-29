@@ -18,8 +18,8 @@ const TABS = [
   { id: 'receipt', label: 'Receipt', permission: 'settings.manage' },
   { id: 'printer', label: 'Printer', permission: 'settings.manage' },
   { id: 'inventory', label: 'Inventory & POS', permission: 'settings.manage' },
-  { id: 'security', label: 'Security', permission: null },
-  { id: 'about', label: 'About', permission: null }
+  { id: 'security', label: 'Security', permission: 'settings.manage' },
+  { id: 'about', label: 'About', permission: 'settings.manage' }
 ];
 
 async function render(ctx) {
@@ -474,6 +474,6 @@ async function render(ctx) {
 export const settingsPage = {
   title: 'Settings',
   subtitle: 'Shop details, receipts, printer and security',
-  permission: null,
+  permission: 'settings.manage',
   render
 };

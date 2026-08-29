@@ -5,7 +5,7 @@ const path = require('path');
 const { ipcMain, dialog, app, BrowserWindow } = require('electron');
 
 const { CHANNELS } = require('../../shared/channels');
-const { toUserFacingError, ValidationError } = require('../../shared/errors');
+const { toUserFacingError, ValidationError, PermissionError } = require('../../shared/errors');
 const logger = require('../logger');
 const session = require('../security/session');
 
@@ -29,6 +29,21 @@ const io = require('../services/importexport.service');
 const backup = require('../backup/backup.service');
 const printing = require('../printers/print.service');
 const { fileToDataUrl } = require('../utils/file');
+const datetime = require('../../shared/datetime');
+
+/**
+ * A sales attendant sees only their own work, and only today's. Owners and
+ * managers see the whole shop. This is applied in the MAIN process, so it holds
+ * however the request was made.
+ */
+function isAttendant(user) {
+  return user && user.role !== 'owner' && !(user.permissions || []).includes('reports.view');
+}
+
+function ownWorkToday(user, payload) {
+  const today = datetime.presetRange('today', settings.get('app.timezone', 'Africa/Accra'));
+  return { ...(payload || {}), userId: user.id, from: today.start, to: today.end };
+}
 
 /**
  * IPC handlers.
@@ -58,7 +73,7 @@ const handlers = {
     session.end();
     return { authenticated: false };
   }],
-  'auth.changePassword': ['authenticated', ({ currentPassword, newPassword }, user) =>
+  'auth.changePassword': ['settings.manage', ({ currentPassword, newPassword }, user) =>
     users.changeOwnPassword(user.id, currentPassword, newPassword)],
   'auth.touch': [null, () => { session.touch(); return session.state(); }],
 
@@ -70,7 +85,8 @@ const handlers = {
   }],
 
   // ------------------------------ Dashboard --------------------------------
-  'dashboard.load': ['authenticated', () => reports.dashboard()],
+  'dashboard.load': ['authenticated', (payload, user) =>
+    reports.dashboard(isAttendant(user) ? { scopeUserId: user.id } : {})],
   'reports.summary': ['reports.view', (payload) => reports.summary(payload || {})],
   'reports.sales': ['reports.view', (payload) => reports.salesReport(payload || {})],
   'reports.profit': ['reports.view', (payload) => reports.profitReport(payload || {})],
@@ -93,13 +109,22 @@ const handlers = {
   'pos.resumeHeld': ['pos.use', ({ id }, user) => sales.resumeHeld(id, { user })],
   'pos.deleteHeld': ['pos.use', ({ id }, user) => sales.deleteHeld(id, { user })],
 
-  'sales.list': ['authenticated', (payload, user) => {
-    // An attendant may only look at their own sales.
-    const scoped = user.role === 'attendant' ? { ...payload, userId: user.id } : payload;
-    return sales.list(scoped || {});
+  'sales.list': ['authenticated', (payload, user) =>
+    sales.list(isAttendant(user) ? ownWorkToday(user, payload) : (payload || {}))],
+  'sales.get': ['authenticated', ({ id }, user) => {
+    const sale = sales.getSale(id);
+    if (isAttendant(user) && sale.sale.user_id !== user.id) {
+      throw new PermissionError('You can only open sales that you made yourself.');
+    }
+    return sale;
   }],
-  'sales.get': ['authenticated', ({ id }) => sales.getSale(id)],
-  'sales.findByInvoice': ['authenticated', ({ invoiceNo }) => sales.findByInvoice(invoiceNo)],
+  'sales.findByInvoice': ['authenticated', ({ invoiceNo }, user) => {
+    const sale = sales.findByInvoice(invoiceNo);
+    if (isAttendant(user) && sale.sale.user_id !== user.id) {
+      throw new PermissionError('You can only open sales that you made yourself.');
+    }
+    return sale;
+  }],
 
   // ------------------------------ Products ---------------------------------
   'products.list': ['products.view', (payload) => products.list(payload || {})],
@@ -168,7 +193,8 @@ const handlers = {
   'refunds.create': ['refunds.manage', (payload, user) => refunds.create(payload, { user })],
 
   // ------------------------------- Expenses --------------------------------
-  'expenses.list': ['expenses.view', (payload) => expenses.list(payload || {})],
+  'expenses.list': ['expenses.view', (payload, user) =>
+    expenses.list(isAttendant(user) ? ownWorkToday(user, payload) : (payload || {}))],
   'expenses.get': ['expenses.view', ({ id }) => expenses.get(id)],
   'expenses.categories': ['expenses.view', () => expenses.categories()],
   'expenses.create': ['expenses.manage', (payload, user) => expenses.create(payload, { user })],

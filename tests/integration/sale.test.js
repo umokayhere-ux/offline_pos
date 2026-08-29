@@ -156,7 +156,86 @@ test('a credit sale opens a debt account and raises the customer balance', () =>
 test('a credit sale without a customer is refused', () => {
   assert.throws(() => sales.complete({
     items: [{ productId: rice.id, quantity: '1' }], paymentMethod: 'credit', amountReceived: '0'
-  }, { user }), /Select the customer/);
+  }, { user }), /Enter the customer name/);
+});
+
+// --- Customers typed at the till ------------------------------------------
+// The shop serves different people every day, so the cashier types a name and
+// phone rather than choosing from a list.
+
+test('a customer typed at the till is recorded against the sale', () => {
+  const result = sales.complete({
+    items: [{ productId: rice.id, quantity: '1' }],
+    customerName: 'Ama Mensah', customerPhone: '0244000111',
+    paymentMethod: 'cash', amountReceived: '50.00'
+  }, { user });
+
+  assert.equal(result.sale.customer_name, 'Ama Mensah');
+  assert.equal(result.sale.customer_phone, '0244000111');
+  assert.equal(customers.list({ search: 'Ama' }).total, 1, 'the customer record was created once');
+});
+
+test('the same phone number reuses one account across days', () => {
+  sales.complete({
+    items: [{ productId: soap.id, quantity: '1' }],
+    customerName: 'Kofi', customerPhone: '0201234567',
+    paymentMethod: 'cash', amountReceived: '7.00'
+  }, { user });
+  const second = sales.complete({
+    items: [{ productId: soap.id, quantity: '1' }],
+    customerName: 'Kofi Boateng', customerPhone: '0201234567',
+    paymentMethod: 'cash', amountReceived: '7.00'
+  }, { user });
+
+  assert.equal(customers.list({ search: 'Kofi' }).total, 1, 'one account, not two');
+  assert.equal(second.sale.customer_name, 'Kofi Boateng', 'the fuller name is kept');
+});
+
+test('a name with no phone records this sale without merging strangers', () => {
+  sales.complete({
+    items: [{ productId: soap.id, quantity: '1' }], customerName: 'Yaa',
+    paymentMethod: 'cash', amountReceived: '7.00'
+  }, { user });
+  sales.complete({
+    items: [{ productId: soap.id, quantity: '1' }], customerName: 'Yaa',
+    paymentMethod: 'cash', amountReceived: '7.00'
+  }, { user });
+
+  assert.equal(customers.list({ search: 'Yaa' }).total, 2,
+    'two people can share a first name; without a phone they stay separate');
+});
+
+test('a sale with no customer typed stays an anonymous walk-in', () => {
+  const result = sales.complete({
+    items: [{ productId: soap.id, quantity: '1' }],
+    customerName: '', customerPhone: '',
+    paymentMethod: 'cash', amountReceived: '7.00'
+  }, { user });
+
+  assert.equal(result.sale.customer_id, null);
+  assert.equal(customers.list().total, 0, 'no empty customer record is created');
+});
+
+test('a credit sale to a typed customer opens a debt against that account', () => {
+  const result = sales.complete({
+    items: [{ productId: rice.id, quantity: '10' }],       // ₵500.00
+    customerName: 'Esi Owusu', customerPhone: '0555333444',
+    paymentMethod: 'credit', amountReceived: '200.00'
+  }, { user });
+
+  assert.equal(Money.format(result.sale.debt_pesewas), '₵300.00');
+  const customer = customers.list({ search: 'Esi' }).rows[0];
+  assert.equal(Money.format(customer.balance_pesewas), '₵300.00');
+});
+
+test('a failed sale leaves no stray customer behind', () => {
+  assert.throws(() => sales.complete({
+    items: [{ productId: rice.id, quantity: '9999' }],     // more than is in stock
+    customerName: 'Never Created', customerPhone: '0209999999',
+    paymentMethod: 'cash', amountReceived: '999999.00'
+  }, { user }), /Not enough stock/);
+
+  assert.equal(customers.list({ search: 'Never Created' }).total, 0);
 });
 
 test('Mobile Money must be tendered for the exact total', () => {

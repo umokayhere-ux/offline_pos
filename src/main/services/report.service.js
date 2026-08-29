@@ -208,8 +208,16 @@ function outstandingTotals() {
   };
 }
 
-/** Everything the dashboard shows, in one call. */
-function dashboard() {
+/**
+ * Everything the dashboard shows, in one call.
+ *
+ * `scopeUserId` narrows it to one member of staff: a sales attendant sees only
+ * the sales they made today and nothing about shop-wide profit, debts or what
+ * stock is worth. Owners and managers pass no scope and see the whole shop.
+ */
+function dashboard({ scopeUserId = null } = {}) {
+  if (scopeUserId) return staffDashboard(scopeUserId);
+
   const today = summary({ preset: 'today' });
   const month = summary({ preset: 'this_month' });
   const stock = inventory.stockSummary();
@@ -238,6 +246,63 @@ function dashboard() {
       FROM sales s LEFT JOIN customers c ON c.id = s.customer_id LEFT JOIN users u ON u.id = s.user_id
       WHERE s.is_demo = 0 ORDER BY s.sold_at DESC LIMIT 8
     `).all(),
+    generatedAt: datetime.nowIso()
+  };
+}
+
+/**
+ * The cut-down dashboard a sales attendant sees: their own takings for today,
+ * their own expense entries, and the stock warnings they need to do the job.
+ * No profit, no cost prices, no shop-wide balances.
+ */
+function staffDashboard(userId) {
+  const db = getDb();
+  const range = datetime.presetRange('today', tz());
+  const sales = salesTotals(range, { userId });
+
+  const expenses = db.prepare(`
+    SELECT COALESCE(SUM(amount_pesewas), 0) AS total, COUNT(*) AS n
+    FROM expenses
+    WHERE status = 'active' AND user_id = ? AND spent_at >= ? AND spent_at < ?
+  `).get(userId, range.start, range.end);
+
+  const stock = inventory.stockSummary();
+
+  return {
+    scoped: true,
+    today: {
+      range,
+      grossSales: sales.gross_pesewas,
+      refunds: sales.refunds_pesewas,
+      revenue: sales.gross_pesewas - sales.refunds_pesewas,
+      saleCount: sales.sale_count,
+      refundCount: sales.refund_count,
+      creditPesewas: sales.credit_pesewas,
+      expenses: expenses.total,
+      expenseCount: expenses.n,
+      averageSalePesewas: sales.sale_count > 0
+        ? Math.round((sales.gross_pesewas - sales.refunds_pesewas) / sales.sale_count)
+        : 0
+    },
+    stock: {
+      lowStock: stock.low_stock || 0,
+      outOfStock: stock.out_of_stock || 0,
+      totalProducts: stock.total_products || 0
+    },
+    lowStockProducts: inventory.lowStockProducts(8),
+    paymentMethods: db.prepare(`
+      SELECT s.payment_method, COUNT(*) AS n, COALESCE(SUM(s.total_pesewas), 0) AS total_pesewas
+      FROM sales s
+      WHERE s.user_id = ? AND s.sold_at >= ? AND s.sold_at < ? AND s.is_demo = 0
+      GROUP BY s.payment_method ORDER BY total_pesewas DESC
+    `).all(userId, range.start, range.end),
+    recentSales: db.prepare(`
+      SELECT s.id, s.invoice_no, s.sold_at, s.total_pesewas, s.payment_method, s.status,
+             c.name AS customer_name
+      FROM sales s LEFT JOIN customers c ON c.id = s.customer_id
+      WHERE s.user_id = ? AND s.sold_at >= ? AND s.sold_at < ? AND s.is_demo = 0
+      ORDER BY s.sold_at DESC LIMIT 10
+    `).all(userId, range.start, range.end),
     generatedAt: datetime.nowIso()
   };
 }
@@ -384,7 +449,7 @@ function debtReport(input = {}) {
 }
 
 module.exports = {
-  resolveRange, summary, dailySeries, topProducts, byPaymentMethod, expensesByCategory,
+  resolveRange, summary, dailySeries, staffDashboard, topProducts, byPaymentMethod, expensesByCategory,
   outstandingTotals, dashboard, salesReport, profitReport, inventoryReport,
   cashierReport, customerReport, supplierReport, debtReport
 };
